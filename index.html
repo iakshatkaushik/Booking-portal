@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thapar Lab Schedule</title>
+    <!-- Tailwind CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Custom styles for Thapar theme (optional, for overrides or specific components) -->
+    <link rel="stylesheet" href="static/css/styles.css">
+</head>
+<body class="bg-white font-sans text-black">
+    <nav class="bg-red-700 p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center">
+                <img src="assets/thapar_logo.png" alt="Thapar Logo" class="h-10 mr-3">
+                <a href="index.html" class="text-white text-2xl font-bold">Lab Slot Portal</a>
+            </div>
+            <div>
+                <a href="student.html" class="text-white hover:text-gray-200 px-3 py-2 rounded-md text-sm font-medium">My Slots</a>
+                <a href="admin/login.html" class="bg-white text-red-700 hover:bg-gray-100 px-4 py-2 rounded-md text-sm font-medium transition duration-300">Admin Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="bg-gray-100 py-6">
+        <div class="container mx-auto text-center">
+            <h1 class="text-3xl font-bold mb-2">Live Lab Schedule</h1>
+            <p class="text-gray-600">Updated every 30 seconds</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto my-8 p-4">
+        <div id="schedule-display" class="overflow-x-auto">
+            <!-- Schedule table will be loaded here by JavaScript -->
+            <table class="min-w-full bg-light-sky-blue border border-gray-200 rounded-lg shadow-sm">
+                <thead class="bg-red-700 text-white">
+                    <tr>
+                        <th class="py-3 px-4 text-left border-b border-gray-300">Time Slot</th>
+                        <th class="py-3 px-4 text-left border-b border-gray-300">Monday</th>
+                        <th class="py-3 px-4 text-left border-b border-gray-300">Tuesday</th>
+                        <th class="py-3 px-4 text-left border-b border-gray-300">Wednesday</th>
+                        <th class="py-3 px-4 text-left border-b border-gray-300">Thursday</th>
+                        <th class="py-3 px-4 text-left border-b border-gray-300">Friday</th>
+                    </tr>
+                </thead>
+                <tbody id="schedule-table-body" class="divide-y divide-gray-200">
+                    <!-- Schedule rows will be dynamically inserted here -->
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-gray-500">Loading schedule...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <footer class="bg-red-700 text-white text-center p-4 mt-8">
+        <p>&copy; 2023 Thapar Institute. All rights reserved.</p>
+    </footer>
+
+    <!-- Main JavaScript file -->
+    <script src="static/js/index.js"></script>
+</body>
+</html>

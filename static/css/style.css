@@ -1,0 +1,73 @@
+/* Custom CSS for Thapar Lab Slot Portal */
+
+/* Base font and text color, already mostly covered by Tailwind body classes */
+/* body {
+    /* Using Tailwind's default sans-serif font, but can specify Thapar's font if needed */
+    /* font-family: 'Montserrat', sans-serif; */
+ */
+
+/* Custom color variables (optional, Tailwind handles most colors) */
+/* :root {
+    --thapar-red: #b30000;
+    --thapar-white: #ffffff;
+    --thapar-black: #000000;
+    --thapar-light-sky-blue: #e3f2fd;
+} */
+
+/* Apply Thapar Light Sky Blue to table backgrounds */
+.bg-light-sky-blue {
+    background-color: #e3f2fd; /* Light Sky Blue */
+}
+
+/* Specific styling for the table headers to ensure branding consistency */
+table thead th {
+    background-color: #b30000; /* Thapar Red */
+    color: #ffffff; /* White text */
+}
+
+/* Border styles for consistency */
+table, table th, table td {
+    border-color: #cbd5e0; /* A light gray for borders */
+}
+
+/* Hover effect for table rows */
+.hover\:bg-light-blue-100:hover {
+    background-color: #e0f2f7; /* A slightly lighter blue on hover */
+}
+
+/* Specific styling for form radio buttons */
+.form-radio {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    display: inline-block;
+    vertical-align: middle;
+    background-origin: border-box;
+    user-select: none;
+    flex-shrink: 0;
+    border-radius: 100%;
+    height: 1.25rem; /* Equivalent to h-5 */
+    width: 1.25rem; /* Equivalent to w-5 */
+    border-width: 1px;
+    border-color: #D1D5DB; /* gray-300 */
+    color: #b30000; /* Thapar Red for checked state */
+}
+
+.form-radio:checked {
+    background-color: currentColor;
+    border-color: currentColor;
+    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='3'/%3e%3c/svg%3e");
+}
+
+/* Customizing the focus ring for form elements to match theme */
+.focus\:ring-red-700:focus {
+    --tw-ring-color: #b30000; /* Thapar Red */
+}
+
+/* Add some padding to the main content area on smaller screens */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Student Slot View - Lab Slot Portal</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="static/css/styles.css">
+</head>
+<body class="bg-white min-h-screen">
+  <header class="flex items-center bg-white border-b-4 border-red-700 px-4 py-3">
+    <img src="assets/thapar_logo.png" class="h-10 w-auto mr-4">
+    <h1 class="text-xl font-bold text-black">Student Lab Slot & Attendance</h1>
+  </header>
+
+  <main class="max-w-lg mx-auto mt-8 mb-8 px-2">
+    <h2 class="text-xl font-semibold mb-4 text-black">Check Slot & Attendance</h2>
+    <form id="student-lookup-form" class="mb-6 flex items-center gap-2 flex-wrap">
+      <input type="text" id="student-roll" maxlength="20" required placeholder="Enter Roll No."
+        class="border border-gray-300 rounded px-3 py-2 bg-blue-50 text-black w-44">
+      <button type="submit"
+        class="px-4 py-2 bg-red-700 text-white rounded hover:bg-red-900 font-semibold">Check</button>
+    </form>
+    <div id="student-slot-display"></div>
+  </main>
+
+  <script src="static/js/student.js"></script>
+</body>
+</html>

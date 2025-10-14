@@ -1,0 +1,82 @@
+        // Initial load of the schedule
+        document.addEventListener('DOMContentLoaded', () => {
+            renderPublicSchedule();
+            // Auto-refresh every 30 seconds
+            setInterval(renderPublicSchedule, 30000);
+        });
+
+        /**
+         * Renders the public schedule table on index.html.
+         * Fetches slots from localStorage and displays them by day and time.
+         */
+        function renderPublicSchedule() {
+            const scheduleBody = document.getElementById('schedule-table-body');
+            scheduleBody.innerHTML = ''; // Clear existing schedule
+
+            const slots = JSON.parse(localStorage.getItem('labSlots')) || [];
+            const timeSlots = generateTimeSlots(); // Get the predefined time slots
+
+            // Prepare a map for easy lookup: timeSlot -> day -> [slot details]
+            const scheduleMap = {};
+            timeSlots.forEach(time => {
+                scheduleMap[time] = {
+                    'Monday': [], 'Tuesday': [], 'Wednesday': [], 'Thursday': [], 'Friday': []
+                };
+            });
+
+            slots.forEach(slot => {
+                if (scheduleMap[slot.time] && scheduleMap[slot.time][slot.day]) {
+                    scheduleMap[slot.time][slot.day].push(slot);
+                }
+            });
+
+            // Populate the table
+            timeSlots.forEach(time => {
+                const row = document.createElement('tr');
+                row.classList.add('hover:bg-light-blue-100'); // Tailwind class for hover effect
+
+                const timeCell = document.createElement('td');
+                timeCell.classList.add('py-2', 'px-4', 'border-b', 'border-gray-200', 'font-medium');
+                timeCell.textContent = time;
+                row.appendChild(timeCell);
+
+                const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+                days.forEach(day => {
+                    const cell = document.createElement('td');
+                    cell.classList.add('py-2', 'px-4', 'border-b', 'border-gray-200');
+
+                    const daySlots = scheduleMap[time][day];
+                    if (daySlots.length > 0) {
+                        // Display details for each slot in this cell
+                        daySlots.forEach(s => {
+                            const div = document.createElement('div');
+                            div.classList.add('mb-1');
+                            div.innerHTML = `<span class="font-semibold">${s.groupName}</span> (${s.lab}) <br> <span class="text-sm text-gray-600">${s.course}</span>`;
+                            cell.appendChild(div);
+                        });
+                    } else {
+                        cell.textContent = '-'; // No slot
+                    }
+                    row.appendChild(cell);
+                });
+                scheduleBody.appendChild(row);
+            });
+        }
+
+        /**
+         * Generates the fixed one-hour time slots with 10-min buffer.
+         * @returns {string[]} An array of time slot strings (e.g., "09:00 - 10:00").
+         */
+        function generateTimeSlots() {
+            const slots = [];
+            let startHour = 9; // Start from 9 AM
+            for (let i = 0; i < 6; i++) { // 6 one-hour sessions
+                const endHour = startHour + 1;
+                const startTime = `${String(startHour).padStart(2, '0')}:00`;
+                const endTime = `${String(endHour).padStart(2, '0')}:00`;
+                slots.push(`${startTime} - ${endTime}`);
+                // Buffer of 10 mins is implicitly handled as the next slot starts after the buffer
+                startHour = endHour;
+            }
+            return slots;
+        }

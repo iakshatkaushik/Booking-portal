@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Lab Slot Portal</title>
+    <!-- Tailwind CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="../static/css/styles.css">
+    <!-- Font Awesome for icons (optional, but good for admin dashboards) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-white font-sans text-black">
+    <nav class="bg-red-700 p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center">
+                <img src="../assets/thapar_logo.png" alt="Thapar Logo" class="h-10 mr-3">
+                <a href="dashboard.html" class="text-white text-2xl font-bold">Admin Dashboard</a>
+            </div>
+            <div>
+                <span id="adminName" class="text-white mr-4">Welcome, Admin</span>
+                <button id="logoutBtn"
+                        class="bg-white text-red-700 hover:bg-gray-100 px-4 py-2 rounded-md text-sm font-medium transition duration-300">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <header class="bg-gray-100 py-6">
+        <div class="container mx-auto text-center">
+            <h1 class="text-3xl font-bold mb-2">Lab Management</h1>
+            <p class="text-gray-600">Manage lab slots, groups, students, and attendance.</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto my-8 p-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Slot Management Card -->
+            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition duration-300">
+                <div class="text-center">
+                    <i class="fas fa-calendar-alt text-red-700 text-4xl mb-4"></i>
+                    <h3 class="text-xl font-bold mb-2">Slot Management</h3>
+                    <p class="text-gray-600 mb-4">Create, edit, and delete lab slots.</p>
+                    <button class="bg-red-700 text-white px-5 py-2 rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-opacity-50 transition duration-300"
+                            onclick="showSection('slotManagementSection')">
+                        Manage Slots
+                    </button>
+                </div>
+            </div>
+
+            <!-- Group Management Card -->
+            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition duration-300">
+                <div class="text-center">
+                    <i class="fas fa-users text-red-700 text-4xl mb-4"></i>
+                    <h3 class="text-xl font-bold mb-2">Group Management</h3>
+                    <p class="text-gray-600 mb-4">Manage main groups, subgroups, and auto-generate sub-subgroups.</p>
+                    <button class="bg-red-700 text-white px-5 py-2 rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-opacity-50 transition duration-300"
+                            onclick="showSection('groupManagementSection')">
+                        Manage Groups
+                    </button>
+                </div>
+            </div>
+
+            <!-- Student Management Card -->
+            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition duration-300">
+                <div class="text-center">
+                    <i class="fas fa-user-graduate text-red-700 text-4xl mb-4"></i>
+                    <h3 class="text-xl font-bold mb-2">Student Management</h3>
+                    <p class="text-gray-600 mb-4">Upload and view student details.</p>
+                    <button class="bg-red-700 text-white px-5 py-2 rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-opacity-50 transition duration-300"
+                            onclick="showSection('studentManagementSection')">
+                        Manage Students
+                    </button>
+                </div>
+            </div>
+
+            <!-- Attendance Marking Card -->
+            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition duration-300">
+                <div class="text-center">
+                    <i class="fas fa-clipboard-check text-red-700 text-4xl mb-4"></i>
+                    <h3 class="text-xl font-bold mb-2">Attendance Marking</h3>
+                    <p class="text-gray-600 mb-4">Mark attendance for specific slots and groups.</p>
+                    <button class="bg-red-700 text-white px-5 py-2 rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-opacity-50 transition duration-300"
+                            onclick="showSection('attendanceMarkingSection')">
+                        Mark Attendance
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden Sections for Management -->
+        <div id="slotManagementSection" class="admin-section hidden bg-white p-6 rounded-lg shadow-md mb-8 border border-gray-200">
+            <h2 class="text-2xl font-bold text-red-700 mb-6">Slot Management</h2>
+            <form id="slotForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <input type="hidden" id="slotId">
+                <div>
+                    <label for="slotCourse" class="block text-gray-700 text-sm font-bold mb-2">Course:</label>
+                    <input type="text" id="slotCourse" placeholder="e.g., CO201" required
+                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-700">
+                </div>
+                <div>
+                    <label for="slotLab" class="block text-gray-700 text-sm font-bold mb-2">Lab:</label>
+                    <input type="text" id="slotLab" placeholder="e.g., L201" required
+                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-700">
+                </div>
+                <div>
+                    <label for="slotDay" class="block text-gray-700 text-sm font-bold mb-2">Day:</label>
+                    <select id="slotDay" required
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-700">
+                        <option value="">Select Day</option>
+                        <option value="Monday">Monday</option>
+                        <option value="Tuesday">Tuesday</option>
+                        <option value="Wednesday">Wednesday</option>
+                        <option value="Thursday">Thursday</option>
+                        <option value="Friday">Friday</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="slotTime" class="block text-gray-700 text-sm font-bold mb-2">Time Slot:</label>
+                    <select id="slotTime" required
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-700">
+                        <option value="">Select Time</option>
+                        <!-- Time slots populated by JS -->
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label for="slotGroup" class="block text-gray-700 text-sm font-bold mb-2">Main Group:</label>
+                    <select id="slotGroup" required
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-700">
+                        <option value="">Select Main Group</option>
+                        <!-- Groups populated by JS -->
+                    </select>
+                </div>
+                 <div class="md:col-span-2">
+                    <label for="slotSubSubgroups" class="block text-gray-700 text-sm font-bold mb-2">Assign Sub-subgroups:</label>
+                    <div id="subSubgroupCheckboxes" class="flex flex-wrap gap-2 p-2 border rounded-md bg-gray-50 max-h-32 overflow-y-auto">
+                        <!-- Sub-subgroup checkboxes will be dynamically inserted here based on selected main group -->
+                        <p class="text-gray-500">Select a main group to see sub-subgroups.</p>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 flex justify-end space-x-2">
+                    <button type="submit" id="addSlotBtn"
+                            class="bg-red-700 text-white px-5 py-2 rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-opacity-50 transition duration-300">
+                        Add Slot
+                    </button>
+                    <button type="button" id="cancelEditSlotBtn"
+                            class="bg-gray-500 text-white px-5 py-2 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition duration-300 hidden"
+                            onclick="clearSlotForm()">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+
+            <h3 class="text-xl font-bold mb-4">Existing Slots</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-light-sky-blue border border-gray-200 rounded-lg shadow-sm">
+                    <thead class="bg-red-700 text-white">
+                        <tr>
+                            <th class="py-3 px-4 text-left border-b border-gray-300">Course</th>
+                            <th class="py-3 px-4 text-left border-b border-gray-300">Lab</th>
+                            <th class="py-3 px-4 text-left border-b border-gray-300">Day</th>
+                            <th class="py-3 px-4 text-left border-b border-gray-300">Time</th>
+                            <th class="py-3 px-4 text-left border-b border-gray-300">Group</th>
+                            <th class="py-3 px-4 text-left border-b border-gray-300">Sub-subgroups</th>
+                            <th class="py-3 px-4 text-left border-b border-gray-300">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="slotsTableBody" class="divide-y divide-gray-200">
+                        <!-- Slots will be loaded here -->
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-gray-500">No slots created yet.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="groupManagementSection" class="admin-section hidden bg-white p-6 rounded-lg shadow-md mb-8 border border-gray-200">
+            <h2 class="text-2xl font-bold text-red-700 mb-6">Group Management</h2>
+
+            <form id="groupForm" class="flex flex-col md:flex-row gap-4 mb-6 items-end">
+                <input type="hidden" id="groupId">
+                <div class="flex-grow">
+                    <label for="groupName" class="block text-gray-700 text-sm font-bold mb-2">Group Name (e.g., 2C22):</label>
+                    <input type="text" id="groupName" placeholder="Enter Group Name" required
+                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-700">
+                </div>
+                <button type="submit" id="addGroupBtn"
+                        class="bg-red-700 text-white px-5 py-2 rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-opacity-50 transition duration-300 md:w-auto w-full">
+                    Add Group
+                </button>
+                <button type="button" id="cancelEditGroupBtn"
+                            class="bg-gray-500 text-white px-5 py-2 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition duration-300 hidden md:w-auto w-full"
+                            onclick="clearGroupForm()">
+                        Cancel
+                </button>
+            </form>
+            <p class="text-sm text-gray-600 mb-4">Adding a group will automatically generate 6 sub-subgroups (e.g., 2C22-a to 2C22-f).</p>
+
+
+            <h3 class="text-xl font-bold mb-4">Existing Groups & Sub-subgroups</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-light-sky-blue border border-gray-200 rounded-lg shadow-sm">
+                    <thead class="bg-red-700 text-white">
+                        <tr>
+                            <th class="py-3 px-4 text-left border-b border-gray-300">Group Name</th>
+                            <th class="py-3 px-4 text-left border-b border-gray-300">Sub-subgroups</th>
+                            <th class="py-3 px-4 text-left border-b border-gray-300">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="groupsTableBody" class="divide-y divide-gray-200">
+                        <!-- Groups will be loaded here -->
+                        <tr>
+                            <td colspan="3" class="text-center py-4 text-gray-500">No groups created yet.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="studentManagementSection" class="admin-section hidden bg-white p-6 rounded-lg shadow-md mb-8 border border-gray-200">
+            <h2 class="text-2xl font-bold text-red-700 mb-6">Student Management</h2>
+
+            <div class="mb-6">
+                <h3 class="text-xl font-bold mb-3">Upload Students (CSV)</h3>
+                <p class="text-gray-600 mb-2">Upload a CSV file with columns: `Roll No, Name, Sub-subgroup`</p>
+                <input type="file" id="studentCsvUpload" accept=".csv"
+                       class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-red-100 file:text-red-700 hover:file:bg-red-200">
+                <button id="uploadStudentsBtn"
+                        class="mt-4 bg-red-700 text-white px-5 py-2 rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-opacity-50 transition duration-300">
+                    Upload & Save Students
+                </button>
+                <p id="uploadStatus" class="mt-2 text-sm text-green-600 hidden"></p>
+                <p id="uploadError" class="mt-2 text-sm text-red-600 hidden"></p>
+            </div>
+
+            <h3 class="text-xl font-bold mb-4">Existing Students</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-light-sky-blue border border-gray-200 rounded-lg shadow-sm">
+                    <thead class="bg-red-700 text-white">
+                        <tr>
+                            <th class="py-3 px-4 text-left border-b border-gray-300">Roll No</th>
+                            <th class="py-3 px-4 text-left border-b border-gray-300">Name</th>
+                            <th class="py-3 px-4 text-left border-b border-gray-300">Sub-subgroup</th>
+                            <th class="py-3 px-4 text-left border-b border-gray-300">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsTableBody" class="divide-y divide-gray-200">
+                        <!-- Students will be loaded here -->
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-gray-500">No students uploaded yet.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="attendanceMarkingSection" class="admin-section hidden bg-white p-6 rounded-lg shadow-md mb-8 border border-gray-200">
+            <h2 class="text-2xl font-bold text-red-700 mb-6">Attendance Marking</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label for="attendanceSlot" class="block text-gray-700 text-sm font-bold mb-2">Select Slot:</label>
+                    <select id="attendanceSlot"
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-700">
+                        <option value="">Select a Lab Slot</option>
+                        <!-- Slots dynamically loaded here -->
+                    </select>
+                </div>
+                <div>
+                    <label for="attendanceSubSubgroup" class="block text-gray-700 text-sm font-bold mb-2">Select Sub-subgroup:</label>
+                    <select id="attendanceSubSubgroup" disabled
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-700 bg-gray-100">
+                        <option value="">Select a Slot first</option>
+                        <!-- Sub-subgroups dynamically loaded here based on slot -->
+                    </select>
+                </div>
+            </div>
+
+            <h3 class="text-xl font-bold mb-4" id="attendanceListHeader">Students for Attendance:</h3>
+            <div id="attendanceList" class="overflow-x-auto mb-6">
+                <table class="min-w-full bg-light-sky-blue border border-gray-200 rounded-lg shadow-sm">
+                    <thead class="bg-red-700 text-white">
+                        <tr>
+                            <th class="py-3 px-4 text-left border-b border-gray-300">Roll No</th>
+                            <th class="py-3 px-4 text-left border-b border-gray-300">Name</th>
+                            <th class="py-3 px-4 text-center border-b border-gray-300">
+                                Status
+                                <button id="markAllPresentBtn" class="ml-2 bg-green-600 text-white px-3 py-1 text-xs rounded hover:bg-green-700">✓ All</button>
+                                <button id="markAllAbsentBtn" class="ml-1 bg-red-600 text-white px-3 py-1 text-xs rounded hover:bg-red-700">✗ All</button>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTableBody" class="divide-y divide-gray-200">
+                        <!-- Student list for attendance will be loaded here -->
+                        <tr>
+                            <td colspan="3" class="text-center py-4 text-gray-500">Select a slot and sub-subgroup to load students.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <button id="saveAttendanceBtn" disabled
+                    class="bg-red-700 text-white px-6 py-3 rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-opacity-50 transition duration-300 w-full md:w-auto">
+                Save Attendance
+            </button>
+        </div>
+    </main>
+
+    <footer class="bg-red-700 text-white text-center p-4 mt-8">
+        <p>&copy; 2023 Thapar Institute. All rights reserved.</p>
+    </footer>
+
+    <!-- Main JavaScript file -->
+    <script src="../static/js/dashboard.js"></script>
+</body>
+</html>
