@@ -1,32 +1,26 @@
-// LabSlotPortal/static/js/main.js
+document.addEventListener("DOMContentLoaded", () => {
+    const loginForm = document.getElementById("loginForm");
+    const loginError = document.getElementById("loginError");
 
-// This file can be used for global JavaScript utilities or shared functions
-// across different HTML pages.
+    loginForm.addEventListener("submit", function (e) {
+        e.preventDefault();
 
-// For Phase 1, much of the page-specific logic using localStorage is
-// kept within <script> tags in the HTML files themselves for easier
-// demonstration and isolation, as per "vanilla JavaScript" and
-// "working, ready-to-run frontend" directives.
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
 
-// Example of a global utility (though not strictly required by current spec):
-// function getLocalStorageItem(key, defaultValue = []) {
-//     try {
-//         const item = localStorage.getItem(key);
-//         return item ? JSON.parse(item) : defaultValue;
-//     } catch (e) {
-//         console.error(`Error parsing localStorage item "${key}":`, e);
-//         return defaultValue;
-//     }
-// }
+        // Demo hardcoded admin credentials
+        const ADMIN_USERNAME = "admin";
+        const ADMIN_PASSWORD = "password123";
 
-// function setLocalStorageItem(key, value) {
-//     try {
-//         localStorage.setItem(key, JSON.stringify(value));
-//     } catch (e) {
-//         console.error(`Error setting localStorage item "${key}":`, e);
-//     }
-// }
-
-// Any common UI interactions or data manipulation that applies universally
-// could be placed here.
-
+        if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+            try {
+                localStorage.setItem('isAdminLoggedIn', 'true');
+            } catch (err) {
+                console.warn('Could not access localStorage to set login state:', err);
+            }
+            window.location.href = "dashboard.html";
+        } else {
+            loginError.classList.remove("hidden");
+        }
+    });
+});
