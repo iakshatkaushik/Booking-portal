@@ -71,3 +71,10 @@ table, table th, table td {
         padding-right: 1rem;
     }
 }
+
+/* ---------- Buttons ---------- */
+button {
+    display: block;   /* full row */
+    width:auto;      /* stretch across */
+    margin-bottom: 0.5rem; /* small gap between */
+}
