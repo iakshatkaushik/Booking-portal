@@ -14,7 +14,7 @@ async function renderPublicSchedule() {
     scheduleBody.innerHTML = ''; // Clear existing schedule
 
     try {
-        const response = await fetch('http://127.0.0.1:5000/api/public_schedule');
+        const response = await fetch('https://booking-portal-2-ueub.onrender.com/api/public_schedule');
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const slots = await response.json(); // Backend returns array of slot objects
 
