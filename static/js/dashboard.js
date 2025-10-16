@@ -1,5 +1,7 @@
-        document.addEventListener('DOMContentLoaded', () => {
-            // Admin authentication check
+document.addEventListener('DOMContentLoaded', () => {
+            const API_BASE_URL = 'http://127.0.0.1:5000/api';
+
+            // Admin authentication check - Frontend redirection only
             if (localStorage.getItem('isAdminLoggedIn') !== 'true') {
                 window.location.href = 'login.html'; // Redirect to login if not authenticated
             }
@@ -22,19 +24,17 @@
                     renderSlots();
                     populateSlotGroupSelect();
                     populateTimeSlotsSelect();
-                    // Clear form for new entry when section is opened
                     clearSlotForm();
                 } else if (sectionId === 'groupManagementSection') {
                     renderGroups();
-                    clearGroupForm(); // Clear form
+                    clearGroupForm();
                 } else if (sectionId === 'studentManagementSection') {
                     renderStudents();
                     document.getElementById('uploadStatus').classList.add('hidden');
                     document.getElementById('uploadError').classList.add('hidden');
-                    document.getElementById('studentCsvUpload').value = ''; // Clear file input
+                    document.getElementById('studentCsvUpload').value = '';
                 } else if (sectionId === 'attendanceMarkingSection') {
                     populateAttendanceSlots();
-                    // Clear attendance specific selects
                     document.getElementById('attendanceSlot').value = '';
                     document.getElementById('attendanceSubSubgroup').innerHTML = '<option value="">Select a Slot first</option>';
                     document.getElementById('attendanceSubSubgroup').disabled = true;
@@ -42,21 +42,6 @@
                     document.getElementById('saveAttendanceBtn').disabled = true;
                 }
             };
-
-            // --- Initial Data Setup (if not present) ---
-            if (!localStorage.getItem('groups')) {
-                localStorage.setItem('groups', JSON.stringify([]));
-            }
-            if (!localStorage.getItem('labSlots')) {
-                localStorage.setItem('labSlots', JSON.stringify([]));
-            }
-            if (!localStorage.getItem('students')) {
-                localStorage.setItem('students', JSON.stringify([]));
-            }
-            if (!localStorage.getItem('attendances')) {
-                localStorage.setItem('attendances', JSON.stringify([]));
-            }
-
 
             // --- Helper Functions ---
 
@@ -66,13 +51,13 @@
              */
             function generateTimeSlots() {
                 const slots = [];
-                let startHour = 9; // Start from 9 AM
-                for (let i = 0; i < 6; i++) { // 6 one-hour sessions
+                let startHour = 9;
+                for (let i = 0; i < 6; i++) {
                     const endHour = startHour + 1;
                     const startTime = `${String(startHour).padStart(2, '0')}:00`;
                     const endTime = `${String(endHour).padStart(2, '0')}:00`;
                     slots.push(`${startTime} - ${endTime}`);
-                    startHour = endHour; // Next slot starts after previous one ends (implicitly includes buffer)
+                    startHour = endHour;
                 }
                 return slots;
             }
@@ -107,24 +92,31 @@
             /**
              * Populates the main group dropdown in the slot form.
              */
-            function populateSlotGroupSelect() {
-                const groups = JSON.parse(localStorage.getItem('groups')) || [];
-                slotGroupSelect.innerHTML = '<option value="">Select Main Group</option>';
-                groups.forEach(group => {
-                    const option = document.createElement('option');
-                    option.value = group.name;
-                    option.textContent = group.name;
-                    slotGroupSelect.appendChild(option);
-                });
-                // Also trigger sub-subgroup population in case a group is pre-selected for edit
-                populateSubSubgroupCheckboxes();
+            async function populateSlotGroupSelect() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/groups`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const groups = await response.json();
+
+                    slotGroupSelect.innerHTML = '<option value="">Select Main Group</option>';
+                    groups.forEach(group => {
+                        const option = document.createElement('option');
+                        option.value = group.name;
+                        option.textContent = group.name;
+                        slotGroupSelect.appendChild(option);
+                    });
+                    populateSubSubgroupCheckboxes(); // Trigger after groups are loaded
+                } catch (error) {
+                    console.error('Error fetching groups for slot select:', error);
+                    alert('Failed to load groups for slot management.');
+                }
             }
 
             /**
              * Populates sub-subgroup checkboxes based on the selected main group.
              */
             slotGroupSelect.addEventListener('change', populateSubSubgroupCheckboxes);
-            function populateSubSubgroupCheckboxes() {
+            async function populateSubSubgroupCheckboxes() {
                 const selectedGroup = slotGroupSelect.value;
                 subSubgroupCheckboxesDiv.innerHTML = ''; // Clear existing checkboxes
 
@@ -133,21 +125,27 @@
                     return;
                 }
 
-                const groups = JSON.parse(localStorage.getItem('groups')) || [];
-                const group = groups.find(g => g.name === selectedGroup);
+                try {
+                    const response = await fetch(`${API_BASE_URL}/groups/${selectedGroup}/subsubgroups`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const subSubgroups = await response.json();
 
-                if (group && group.subSubgroups.length > 0) {
-                    group.subSubgroups.forEach(subSubgroup => {
-                        const div = document.createElement('div');
-                        div.classList.add('flex', 'items-center', 'mr-4');
-                        div.innerHTML = `
-                            <input type="checkbox" id="subSubgroup-${subSubgroup}" value="${subSubgroup}" class="h-4 w-4 text-red-700 border-gray-300 rounded focus:ring-red-700">
-                            <label for="subSubgroup-${subSubgroup}" class="ml-2 text-sm text-gray-700">${subSubgroup}</label>
-                        `;
-                        subSubgroupCheckboxesDiv.appendChild(div);
-                    });
-                } else {
-                    subSubgroupCheckboxesDiv.innerHTML = '<p class="text-gray-500">No sub-subgroups found for this group. Create groups first.</p>';
+                    if (subSubgroups.length > 0) {
+                        subSubgroups.forEach(subSubgroup => {
+                            const div = document.createElement('div');
+                            div.classList.add('flex', 'items-center', 'mr-4');
+                            div.innerHTML = `
+                                <input type="checkbox" id="subSubgroup-${subSubgroup}" value="${subSubgroup}" class="h-4 w-4 text-red-700 border-gray-300 rounded focus:ring-red-700">
+                                <label for="subSubgroup-${subSubgroup}" class="ml-2 text-sm text-gray-700">${subSubgroup}</label>
+                            `;
+                            subSubgroupCheckboxesDiv.appendChild(div);
+                        });
+                    } else {
+                        subSubgroupCheckboxesDiv.innerHTML = '<p class="text-gray-500">No sub-subgroups found for this group. Create groups first.</p>';
+                    }
+                } catch (error) {
+                    console.error('Error fetching sub-subgroups:', error);
+                    subSubgroupCheckboxesDiv.innerHTML = '<p class="text-red-500">Failed to load sub-subgroups.</p>';
                 }
             }
 
@@ -155,32 +153,40 @@
             /**
              * Renders the list of lab slots in the table.
              */
-            function renderSlots() {
-                const slots = JSON.parse(localStorage.getItem('labSlots')) || [];
-                slotsTableBody.innerHTML = ''; // Clear existing rows
+            async function renderSlots() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/slots`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const slots = await response.json();
 
-                if (slots.length === 0) {
-                    slotsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500">No slots created yet.</td></tr>';
-                    return;
+                    slotsTableBody.innerHTML = '';
+
+                    if (slots.length === 0) {
+                        slotsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500">No slots created yet.</td></tr>';
+                        return;
+                    }
+
+                    slots.forEach(slot => {
+                        const row = document.createElement('tr');
+                        row.classList.add('hover:bg-light-blue-100');
+                        row.innerHTML = `
+                            <td class="py-2 px-4 border-b border-gray-200">${slot.course}</td>
+                            <td class="py-2 px-4 border-b border-gray-200">${slot.lab}</td>
+                            <td class="py-2 px-4 border-b border-gray-200">${slot.day}</td>
+                            <td class="py-2 px-4 border-b border-gray-200">${slot.time}</td>
+                            <td class="py-2 px-4 border-b border-gray-200">${slot.groupName}</td>
+                            <td class="py-2 px-4 border-b border-gray-200">${slot.subSubgroups ? slot.subSubgroups.join(', ') : 'N/A'}</td>
+                            <td class="py-2 px-4 border-b border-gray-200">
+                                <button onclick="editSlot('${slot.id}')" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i> Edit</button>
+                                <button onclick="deleteSlot('${slot.id}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i> Delete</button>
+                            </td>
+                        `;
+                        slotsTableBody.appendChild(row);
+                    });
+                } catch (error) {
+                    console.error('Error fetching slots:', error);
+                    slotsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-red-500">Failed to load slots.</td></tr>';
                 }
-
-                slots.forEach(slot => {
-                    const row = document.createElement('tr');
-                    row.classList.add('hover:bg-light-blue-100');
-                    row.innerHTML = `
-                        <td class="py-2 px-4 border-b border-gray-200">${slot.course}</td>
-                        <td class="py-2 px-4 border-b border-gray-200">${slot.lab}</td>
-                        <td class="py-2 px-4 border-b border-gray-200">${slot.day}</td>
-                        <td class="py-2 px-4 border-b border-gray-200">${slot.time}</td>
-                        <td class="py-2 px-4 border-b border-gray-200">${slot.groupName}</td>
-                        <td class="py-2 px-4 border-b border-gray-200">${slot.subSubgroups ? slot.subSubgroups.join(', ') : 'N/A'}</td>
-                        <td class="py-2 px-4 border-b border-gray-200">
-                            <button onclick="editSlot('${slot.id}')" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i> Edit</button>
-                            <button onclick="deleteSlot('${slot.id}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i> Delete</button>
-                        </td>
-                    `;
-                    slotsTableBody.appendChild(row);
-                });
             }
 
             /**
@@ -201,10 +207,10 @@
             /**
              * Handles adding or updating a lab slot.
              */
-            slotForm.addEventListener('submit', (e) => {
+            slotForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
-                const id = slotIdInput.value || `slot-${Date.now()}`;
+                const id = slotIdInput.value; // ID will be present if editing
                 const course = slotCourseInput.value.trim().toUpperCase();
                 const lab = slotLabInput.value.trim().toUpperCase();
                 const day = slotDaySelect.value;
@@ -218,49 +224,57 @@
                     return;
                 }
 
-                const newSlot = { id, course, lab, day, time, groupName, subSubgroups: selectedSubSubgroups };
+                const slotData = { course, lab, day, time, groupName, subSubgroups: selectedSubSubgroups };
 
-                let slots = JSON.parse(localStorage.getItem('labSlots')) || [];
-
-                if (slotIdInput.value) { // Edit existing slot
-                    slots = slots.map(slot => slot.id === id ? newSlot : slot);
-                } else { // Add new slot
-                    // Basic validation for duplicate slots (same day, time, lab)
-                    const isDuplicate = slots.some(slot =>
-                        slot.day === newSlot.day &&
-                        slot.time === newSlot.time &&
-                        slot.lab === newSlot.lab
-                    );
-                    if (isDuplicate) {
-                        alert('A slot for this lab, day, and time already exists.');
-                        return;
-                        
+                try {
+                    let response;
+                    if (id) { // Edit existing slot
+                        response = await fetch(`${API_BASE_URL}/slots/${id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(slotData)
+                        });
+                    } else { // Add new slot
+                        response = await fetch(`${API_BASE_URL}/slots`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(slotData)
+                        });
                     }
-                    slots.push(newSlot);
-                }
 
-                localStorage.setItem('labSlots', JSON.stringify(slots));
-                renderSlots();
-                clearSlotForm();
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                    }
+
+                    await response.json(); // Consume response
+                    renderSlots();
+                    clearSlotForm();
+                } catch (error) {
+                    console.error('Error saving slot:', error);
+                    alert(`Failed to save slot: ${error.message}`);
+                }
             });
 
             /**
              * Populates the slot form with data for editing.
              * @param {string} id The ID of the slot to edit.
              */
-            window.editSlot = function(id) {
-                const slots = JSON.parse(localStorage.getItem('labSlots')) || [];
-                const slotToEdit = slots.find(slot => slot.id === id);
+            window.editSlot = async function(id) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/slots/${id}`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const slotToEdit = await response.json();
 
-                if (slotToEdit) {
                     slotIdInput.value = slotToEdit.id;
                     slotCourseInput.value = slotToEdit.course;
                     slotLabInput.value = slotToEdit.lab;
                     slotDaySelect.value = slotToEdit.day;
                     slotTimeSelect.value = slotToEdit.time;
                     slotGroupSelect.value = slotToEdit.groupName;
-                    populateSubSubgroupCheckboxes(); // Repopulate and then check
-                    // Check the assigned sub-subgroups
+
+                    // Ensure sub-subgroups are populated *before* checking them
+                    await populateSubSubgroupCheckboxes();
                     slotToEdit.subSubgroups.forEach(subSubgroup => {
                         const checkbox = document.getElementById(`subSubgroup-${subSubgroup}`);
                         if (checkbox) checkbox.checked = true;
@@ -268,6 +282,9 @@
 
                     addSlotBtn.textContent = 'Update Slot';
                     cancelEditSlotBtn.classList.remove('hidden');
+                } catch (error) {
+                    console.error('Error fetching slot for edit:', error);
+                    alert('Failed to load slot data for editing.');
                 }
             };
 
@@ -275,13 +292,24 @@
              * Deletes a lab slot.
              * @param {string} id The ID of the slot to delete.
              */
-            window.deleteSlot = function(id) {
+            window.deleteSlot = async function(id) {
                 if (confirm('Are you sure you want to delete this slot?')) {
-                    let slots = JSON.parse(localStorage.getItem('labSlots')) || [];
-                    slots = slots.filter(slot => slot.id !== id);
-                    localStorage.setItem('labSlots', JSON.stringify(slots));
-                    renderSlots();
-                    clearSlotForm(); // Clear form in case the deleted slot was being edited
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/slots/${id}`, {
+                            method: 'DELETE'
+                        });
+
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                        }
+
+                        renderSlots();
+                        clearSlotForm();
+                    } catch (error) {
+                        console.error('Error deleting slot:', error);
+                        alert(`Failed to delete slot: ${error.message}`);
+                    }
                 }
             };
 
@@ -296,28 +324,36 @@
             /**
              * Renders the list of groups and their sub-subgroups.
              */
-            function renderGroups() {
-                const groups = JSON.parse(localStorage.getItem('groups')) || [];
-                groupsTableBody.innerHTML = '';
+            async function renderGroups() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/groups`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const groups = await response.json();
 
-                if (groups.length === 0) {
-                    groupsTableBody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-gray-500">No groups created yet.</td></tr>';
-                    return;
+                    groupsTableBody.innerHTML = '';
+
+                    if (groups.length === 0) {
+                        groupsTableBody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-gray-500">No groups created yet.</td></tr>';
+                        return;
+                    }
+
+                    groups.forEach(group => {
+                        const row = document.createElement('tr');
+                        row.classList.add('hover:bg-light-blue-100');
+                        row.innerHTML = `
+                            <td class="py-2 px-4 border-b border-gray-200">${group.name}</td>
+                            <td class="py-2 px-4 border-b border-gray-200">${group.subSubgroups.join(', ')}</td>
+                            <td class="py-2 px-4 border-b border-gray-200">
+                                <button onclick="editGroup('${group.id}')" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i> Edit</button>
+                                <button onclick="deleteGroup('${group.id}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i> Delete</button>
+                            </td>
+                        `;
+                        groupsTableBody.appendChild(row);
+                    });
+                } catch (error) {
+                    console.error('Error fetching groups:', error);
+                    groupsTableBody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-red-500">Failed to load groups.</td></tr>';
                 }
-
-                groups.forEach(group => {
-                    const row = document.createElement('tr');
-                    row.classList.add('hover:bg-light-blue-100');
-                    row.innerHTML = `
-                        <td class="py-2 px-4 border-b border-gray-200">${group.name}</td>
-                        <td class="py-2 px-4 border-b border-gray-200">${group.subSubgroups.join(', ')}</td>
-                        <td class="py-2 px-4 border-b border-gray-200">
-                            <button onclick="editGroup('${group.id}')" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i> Edit</button>
-                            <button onclick="deleteGroup('${group.id}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i> Delete</button>
-                        </td>
-                    `;
-                    groupsTableBody.appendChild(row);
-                });
             }
 
             /**
@@ -331,12 +367,12 @@
             }
 
             /**
-             * Handles adding or updating a group. Auto-generates sub-subgroups.
+             * Handles adding or updating a group.
              */
-            groupForm.addEventListener('submit', (e) => {
+            groupForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
-                const id = groupIdInput.value || `group-${Date.now()}`;
+                const id = groupIdInput.value;
                 const name = groupNameInput.value.trim().toUpperCase();
 
                 if (!name) {
@@ -344,43 +380,54 @@
                     return;
                 }
 
-                // Auto-generate 6 sub-subgroups (e.g., 2C22-a to 2C22-f)
-                const subSubgroups = ['a', 'b', 'c', 'd', 'e', 'f'].map(suffix => `${name}-${suffix}`);
-
-                const newGroup = { id, name, subSubgroups };
-
-                let groups = JSON.parse(localStorage.getItem('groups')) || [];
-
-                if (groupIdInput.value) { // Edit existing group (only name can be edited, sub-subgroups regenerate)
-                    groups = groups.map(group => group.id === id ? newGroup : group);
-                } else { // Add new group
-                    // Prevent duplicate group names
-                    if (groups.some(group => group.name === name)) {
-                        alert(`Group "${name}" already exists.`);
-                        return;
+                try {
+                    let response;
+                    if (id) { // Edit existing group
+                        response = await fetch(`${API_BASE_URL}/groups/${id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name })
+                        });
+                    } else { // Add new group
+                        response = await fetch(`${API_BASE_URL}/groups`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name })
+                        });
                     }
-                    groups.push(newGroup);
-                }
 
-                localStorage.setItem('groups', JSON.stringify(groups));
-                renderGroups();
-                clearGroupForm();
-                populateSlotGroupSelect(); // Update group select in slot management
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                    }
+
+                    await response.json(); // Consume response
+                    renderGroups();
+                    clearGroupForm();
+                    populateSlotGroupSelect(); // Update group select in slot management
+                } catch (error) {
+                    console.error('Error saving group:', error);
+                    alert(`Failed to save group: ${error.message}`);
+                }
             });
 
             /**
              * Populates the group form for editing.
              * @param {string} id The ID of the group to edit.
              */
-            window.editGroup = function(id) {
-                const groups = JSON.parse(localStorage.getItem('groups')) || [];
-                const groupToEdit = groups.find(group => group.id === id);
+            window.editGroup = async function(id) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/groups/${id}`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const groupToEdit = await response.json();
 
-                if (groupToEdit) {
                     groupIdInput.value = groupToEdit.id;
                     groupNameInput.value = groupToEdit.name;
                     addGroupBtn.textContent = 'Update Group';
                     cancelEditGroupBtn.classList.remove('hidden');
+                } catch (error) {
+                    console.error('Error fetching group for edit:', error);
+                    alert('Failed to load group data for editing.');
                 }
             };
 
@@ -388,20 +435,25 @@
              * Deletes a group.
              * @param {string} id The ID of the group to delete.
              */
-            window.deleteGroup = function(id) {
+            window.deleteGroup = async function(id) {
                 if (confirm('Are you sure you want to delete this group and all its associated sub-subgroups? This will affect existing slots and students.')) {
-                    let groups = JSON.parse(localStorage.getItem('groups')) || [];
-                    const groupToDelete = groups.find(g => g.id === id);
-                    if (!groupToDelete) return;
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/groups/${id}`, {
+                            method: 'DELETE'
+                        });
 
-                    groups = groups.filter(group => group.id !== id);
-                    localStorage.setItem('groups', JSON.stringify(groups));
-                    renderGroups();
-                    clearGroupForm();
-                    populateSlotGroupSelect(); // Update group select in slot management
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                        }
 
-                    // Optionally, you might want to remove students from deleted sub-subgroups or unassign slots
-                    // For Phase 1, we'll leave this more basic and assume admin manages carefully.
+                        renderGroups();
+                        clearGroupForm();
+                        populateSlotGroupSelect();
+                    } catch (error) {
+                        console.error('Error deleting group:', error);
+                        alert(`Failed to delete group: ${error.message}`);
+                    }
                 }
             };
 
@@ -416,34 +468,42 @@
             /**
              * Renders the list of students in the table.
              */
-            function renderStudents() {
-                const students = JSON.parse(localStorage.getItem('students')) || [];
-                studentsTableBody.innerHTML = '';
+            async function renderStudents() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/students`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const students = await response.json();
 
-                if (students.length === 0) {
-                    studentsTableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-500">No students uploaded yet.</td></tr>';
-                    return;
+                    studentsTableBody.innerHTML = '';
+
+                    if (students.length === 0) {
+                        studentsTableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-500">No students uploaded yet.</td></tr>';
+                        return;
+                    }
+
+                    students.forEach(student => {
+                        const row = document.createElement('tr');
+                        row.classList.add('hover:bg-light-blue-100');
+                        row.innerHTML = `
+                            <td class="py-2 px-4 border-b border-gray-200">${student.rollNo}</td>
+                            <td class="py-2 px-4 border-b border-gray-200">${student.name}</td>
+                            <td class="py-2 px-4 border-b border-gray-200">${student.subSubgroup}</td>
+                            <td class="py-2 px-4 border-b border-gray-200">
+                                <button onclick="deleteStudent('${student.rollNo}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i> Delete</button>
+                            </td>
+                        `;
+                        studentsTableBody.appendChild(row);
+                    });
+                } catch (error) {
+                    console.error('Error fetching students:', error);
+                    studentsTableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-red-500">Failed to load students.</td></tr>';
                 }
-
-                students.forEach(student => {
-                    const row = document.createElement('tr');
-                    row.classList.add('hover:bg-light-blue-100');
-                    row.innerHTML = `
-                        <td class="py-2 px-4 border-b border-gray-200">${student.rollNo}</td>
-                        <td class="py-2 px-4 border-b border-gray-200">${student.name}</td>
-                        <td class="py-2 px-4 border-b border-gray-200">${student.subSubgroup}</td>
-                        <td class="py-2 px-4 border-b border-gray-200">
-                            <button onclick="deleteStudent('${student.rollNo}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i> Delete</button>
-                        </td>
-                    `;
-                    studentsTableBody.appendChild(row);
-                });
             }
 
             /**
              * Handles CSV file upload for students.
              */
-            uploadStudentsBtn.addEventListener('click', () => {
+            uploadStudentsBtn.addEventListener('click', async () => {
                 const file = studentCsvUpload.files[0];
                 uploadStatus.classList.add('hidden');
                 uploadError.classList.add('hidden');
@@ -454,103 +514,55 @@
                     return;
                 }
 
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const csvText = e.target.result;
-                        const lines = csvText.split('\n').filter(line => line.trim() !== '');
-                        if (lines.length === 0) {
-                            uploadError.textContent = 'CSV file is empty or malformed.';
-                            uploadError.classList.remove('hidden');
-                            return;
-                        }
+                const formData = new FormData();
+                formData.append('file', file);
 
-                        const headers = lines[0].split(',').map(h => h.trim());
-                        const expectedHeaders = ['Roll No', 'Name', 'Sub-subgroup'];
-                        if (!expectedHeaders.every(h => headers.includes(h))) {
-                            uploadError.textContent = 'CSV headers must be "Roll No, Name, Sub-subgroup". Please check your file.';
-                            uploadError.classList.remove('hidden');
-                            return;
-                        }
+                try {
+                    const response = await fetch(`${API_BASE_URL}/students/upload`, {
+                        method: 'POST',
+                        body: formData
+                    });
 
-                        const newStudents = [];
-                        const existingStudents = JSON.parse(localStorage.getItem('students')) || [];
-                        const allGroups = JSON.parse(localStorage.getItem('groups')) || [];
-                        const validSubSubgroups = new Set(allGroups.flatMap(g => g.subSubgroups));
+                    const data = await response.json();
 
-                        for (let i = 1; i < lines.length; i++) {
-                            const values = lines[i].split(',').map(v => v.trim());
-                            if (values.length !== headers.length) {
-                                console.warn(`Skipping malformed row: ${lines[i]}`);
-                                continue;
-                            }
-
-                            const student = {};
-                            headers.forEach((header, index) => {
-                                if (header === 'Roll No') student.rollNo = values[index].toUpperCase();
-                                if (header === 'Name') student.name = values[index];
-                                if (header === 'Sub-subgroup') student.subSubgroup = values[index].toUpperCase();
-                            });
-
-                            if (!student.rollNo || !student.name || !student.subSubgroup) {
-                                console.warn(`Skipping student with missing data: ${JSON.stringify(student)}`);
-                                continue;
-                            }
-                            if (!validSubSubgroups.has(student.subSubgroup)) {
-                                console.warn(`Skipping student ${student.rollNo} - Invalid sub-subgroup: ${student.subSubgroup}`);
-                                uploadError.textContent = `Warning: Some students assigned to invalid sub-subgroups (e.g., ${student.subSubgroup}) were skipped. Please ensure sub-subgroups exist.`;
-                                uploadError.classList.remove('hidden');
-                                continue;
-                            }
-
-                            // Check for duplicates before adding
-                            if (!existingStudents.some(s => s.rollNo === student.rollNo) && !newStudents.some(s => s.rollNo === student.rollNo)) {
-                                newStudents.push(student);
-                            } else {
-                                console.warn(`Skipping duplicate student: ${student.rollNo}`);
-                            }
-                        }
-
-                        if (newStudents.length > 0) {
-                            const updatedStudents = [...existingStudents, ...newStudents];
-                            localStorage.setItem('students', JSON.stringify(updatedStudents));
-                            renderStudents();
-                            uploadStatus.textContent = `${newStudents.length} new students uploaded successfully.`;
-                            uploadStatus.classList.remove('hidden');
-                            studentCsvUpload.value = ''; // Clear file input
-                        } else {
-                            uploadStatus.textContent = 'No new students to upload or all were duplicates/invalid.';
-                            uploadStatus.classList.remove('hidden');
-                        }
-                    } catch (error) {
-                        uploadError.textContent = `Error processing CSV: ${error.message}`;
+                    if (!response.ok) {
+                        uploadError.textContent = data.message || `Error: ${response.statusText}`;
                         uploadError.classList.remove('hidden');
-                        console.error('CSV processing error:', error);
+                        return;
                     }
-                };
-                reader.onerror = () => {
-                    uploadError.textContent = 'Failed to read file.';
+
+                    renderStudents();
+                    uploadStatus.textContent = data.message;
+                    uploadStatus.classList.remove('hidden');
+                    studentCsvUpload.value = ''; // Clear file input
+                } catch (error) {
+                    uploadError.textContent = `Error uploading CSV: ${error.message}`;
                     uploadError.classList.remove('hidden');
-                };
-                reader.readAsText(file);
+                    console.error('CSV upload error:', error);
+                }
             });
 
             /**
              * Deletes a student by roll number.
              * @param {string} rollNo The roll number of the student to delete.
              */
-            window.deleteStudent = function(rollNo) {
+            window.deleteStudent = async function(rollNo) {
                 if (confirm(`Are you sure you want to delete student with Roll No: ${rollNo}? This will also remove their attendance records.`)) {
-                    let students = JSON.parse(localStorage.getItem('students')) || [];
-                    students = students.filter(student => student.rollNo !== rollNo);
-                    localStorage.setItem('students', JSON.stringify(students));
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/students/${rollNo}`, {
+                            method: 'DELETE'
+                        });
 
-                    // Also remove attendance records for this student
-                    let attendances = JSON.parse(localStorage.getItem('attendances')) || [];
-                    attendances = attendances.filter(att => att.rollNo !== rollNo);
-                    localStorage.setItem('attendances', JSON.stringify(attendances));
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                        }
 
-                    renderStudents();
+                        renderStudents();
+                    } catch (error) {
+                        console.error('Error deleting student:', error);
+                        alert(`Failed to delete student: ${error.message}`);
+                    }
                 }
             };
 
@@ -568,32 +580,41 @@
             /**
              * Populates the slot dropdown for attendance marking.
              */
-            function populateAttendanceSlots() {
-                const slots = JSON.parse(localStorage.getItem('labSlots')) || [];
-                attendanceSlotSelect.innerHTML = '<option value="">Select a Lab Slot</option>';
-                slots.forEach(slot => {
-                    const option = document.createElement('option');
-                    option.value = slot.id;
-                    option.textContent = `${slot.course} - ${slot.lab} (${slot.day}, ${slot.time})`;
-                    attendanceSlotSelect.appendChild(option);
-                });
+            async function populateAttendanceSlots() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/attendance/slots`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const slots = await response.json();
+
+                    attendanceSlotSelect.innerHTML = '<option value="">Select a Lab Slot</option>';
+                    slots.forEach(slot => {
+                        const option = document.createElement('option');
+                        option.value = slot.id;
+                        option.textContent = `${slot.course} - ${slot.lab} (${slot.day}, ${slot.time})`;
+                        option.dataset.subSubgroups = JSON.stringify(slot.subSubgroups); // Store subSubgroups in dataset
+                        attendanceSlotSelect.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Error fetching attendance slots:', error);
+                    alert('Failed to load lab slots for attendance.');
+                }
             }
 
             /**
              * Populates the sub-subgroup dropdown for attendance based on the selected slot.
              */
             attendanceSlotSelect.addEventListener('change', () => {
+                const selectedOption = attendanceSlotSelect.options[attendanceSlotSelect.selectedIndex];
                 const selectedSlotId = attendanceSlotSelect.value;
                 attendanceSubSubgroupSelect.innerHTML = '<option value="">Select a Sub-subgroup</option>';
                 attendanceSubSubgroupSelect.disabled = true;
                 attendanceTableBody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-gray-500">Select a slot and sub-subgroup to load students.</td></tr>';
                 saveAttendanceBtn.disabled = true;
 
-                if (selectedSlotId) {
-                    const slots = JSON.parse(localStorage.getItem('labSlots')) || [];
-                    const selectedSlot = slots.find(s => s.id === selectedSlotId);
-                    if (selectedSlot && selectedSlot.subSubgroups) {
-                        selectedSlot.subSubgroups.forEach(subSubgroup => {
+                if (selectedSlotId && selectedOption && selectedOption.dataset.subSubgroups) {
+                    const subSubgroups = JSON.parse(selectedOption.dataset.subSubgroups);
+                    if (subSubgroups.length > 0) {
+                        subSubgroups.forEach(subSubgroup => {
                             const option = document.createElement('option');
                             option.value = subSubgroup;
                             option.textContent = subSubgroup;
@@ -607,38 +628,33 @@
             /**
              * Loads students for attendance marking based on selected slot and sub-subgroup.
              */
-            attendanceSubSubgroupSelect.addEventListener('change', () => {
+            attendanceSubSubgroupSelect.addEventListener('change', async () => {
                 const selectedSlotId = attendanceSlotSelect.value;
                 const selectedSubSubgroup = attendanceSubSubgroupSelect.value;
                 attendanceTableBody.innerHTML = '';
                 currentStudentsForAttendance = [];
                 saveAttendanceBtn.disabled = true;
 
-                if (selectedSlotId && selectedSubSubgroup) {
-                    const students = JSON.parse(localStorage.getItem('students')) || [];
-                    const filteredStudents = students.filter(s => s.subSubgroup === selectedSubSubgroup);
+                if (!selectedSlotId || !selectedSubSubgroup) {
+                    return;
+                }
 
-                    if (filteredStudents.length === 0) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/attendance/students?slotId=${selectedSlotId}&subSubgroup=${selectedSubSubgroup}`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const studentsWithAttendance = await response.json(); // This includes initial status
+
+                    if (studentsWithAttendance.length === 0) {
                         attendanceTableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-gray-500">No students found for sub-subgroup: ${selectedSubSubgroup}.</td></tr>`;
                         return;
                     }
 
-                    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-                    const attendances = JSON.parse(localStorage.getItem('attendances')) || [];
-
-                    filteredStudents.forEach(student => {
+                    studentsWithAttendance.forEach(student => {
                         const row = document.createElement('tr');
                         row.classList.add('hover:bg-light-blue-100');
                         row.dataset.rollNo = student.rollNo;
 
-                        // Check if attendance for this student, slot, and day already exists
-                        const existingAttendance = attendances.find(att =>
-                            att.rollNo === student.rollNo &&
-                            att.slotId === selectedSlotId &&
-                            att.date === today
-                        );
-
-                        const initialStatus = existingAttendance ? existingAttendance.status : 'Absent'; // Default to Absent if not marked
+                        const initialStatus = student.status || 'Absent'; // Default to Absent if backend doesn't provide status
 
                         row.innerHTML = `
                             <td class="py-2 px-4 border-b border-gray-200">${student.rollNo}</td>
@@ -658,6 +674,9 @@
                         currentStudentsForAttendance.push({ rollNo: student.rollNo, name: student.name, initialStatus });
                     });
                     saveAttendanceBtn.disabled = false;
+                } catch (error) {
+                    console.error('Error loading students for attendance:', error);
+                    attendanceTableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-red-500">Failed to load students for attendance.</td></tr>`;
                 }
             });
 
@@ -683,7 +702,7 @@
             /**
              * Saves the marked attendance for the selected slot and subgroup.
              */
-            saveAttendanceBtn.addEventListener('click', () => {
+            saveAttendanceBtn.addEventListener('click', async () => {
                 const selectedSlotId = attendanceSlotSelect.value;
                 const selectedSubSubgroup = attendanceSubSubgroupSelect.value;
 
@@ -692,56 +711,45 @@
                     return;
                 }
 
-                const slots = JSON.parse(localStorage.getItem('labSlots')) || [];
-                const currentSlot = slots.find(s => s.id === selectedSlotId);
-                if (!currentSlot) {
-                    alert('Selected slot not found.');
-                    return;
-                }
-
-                const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-                let attendances = JSON.parse(localStorage.getItem('attendances')) || [];
-
+                const attendanceRecords = [];
                 attendanceTableBody.querySelectorAll('tr').forEach(row => {
                     const rollNo = row.dataset.rollNo;
                     const statusInput = row.querySelector(`input[name="status-${rollNo}"]:checked`);
-                    const status = statusInput ? statusInput.value : 'Absent'; // Default to Absent if no radio is checked
+                    const status = statusInput ? statusInput.value : 'Absent';
 
-                    // Find if attendance for this student, slot, and date already exists
-                    const existingAttendanceIndex = attendances.findIndex(att =>
-                        att.rollNo === rollNo &&
-                        att.slotId === selectedSlotId &&
-                        att.date === today
-                    );
+                    const studentName = currentStudentsForAttendance.find(s => s.rollNo === rollNo)?.name || rollNo;
 
-                    const studentName = currentStudentsForAttendance.find(s => s.rollNo === rollNo)?.name || rollNo; // Get name from loaded students
-
-                    const attendanceRecord = {
-                        id: existingAttendanceIndex !== -1 ? attendances[existingAttendanceIndex].id : `att-${Date.now()}-${rollNo}`,
+                    attendanceRecords.push({
                         rollNo: rollNo,
                         name: studentName,
-                        subSubgroup: selectedSubSubgroup,
-                        slotId: selectedSlotId,
-                        course: currentSlot.course,
-                        lab: currentSlot.lab,
-                        day: currentSlot.day,
-                        time: currentSlot.time,
-                        date: today,
-                        status: status,
-                        markedBy: 'admin', // Could be extended to actual admin user
-                        markedAt: new Date().toISOString()
-                    };
-
-                    if (existingAttendanceIndex !== -1) {
-                        attendances[existingAttendanceIndex] = attendanceRecord; // Update
-                    } else {
-                        attendances.push(attendanceRecord); // Add new
-                    }
+                        status: status
+                    });
                 });
 
-                localStorage.setItem('attendances', JSON.stringify(attendances));
-                alert('Attendance saved successfully!');
-                // Optionally re-render students for attendance to reflect saved status
-                attendanceSubSubgroupSelect.dispatchEvent(new Event('change'));
+                const payload = {
+                    slotId: selectedSlotId,
+                    subSubgroupName: selectedSubSubgroup,
+                    attendanceData: attendanceRecords
+                };
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/attendance`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                    }
+
+                    alert('Attendance saved successfully!');
+                    // Re-render attendance table to reflect saved status
+                    attendanceSubSubgroupSelect.dispatchEvent(new Event('change'));
+                } catch (error) {
+                    console.error('Error saving attendance:', error);
+                    alert(`Failed to save attendance: ${error.message}`);
+                }
             });
         });
