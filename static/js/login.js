@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = passwordInput.value.trim();
 
         try {
-            const response = await fetch('http://127.0.0.1:5000/api/admin/login', {
+            const response = await fetch('https://booking-portal-2-ueub.onrender.com/api/admin/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
