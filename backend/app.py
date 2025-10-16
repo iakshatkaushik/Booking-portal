@@ -98,6 +98,9 @@ class LabSlot(db.Model):
 class SlotSubSubgroup(db.Model):
     lab_slot_id = db.Column(db.String(36), db.ForeignKey('lab_slot.id'), primary_key=True)
     sub_subgroup_id = db.Column(db.String(36), db.ForeignKey('sub_subgroup.id'), primary_key=True)
+    sub_subgroup = db.relationship("SubSubgroup")  # Only this relationship is needed
+
+
 
 class Student(db.Model):
     roll_no = db.Column(db.String(20), primary_key=True) # Roll No as PK
@@ -430,12 +433,23 @@ def delete_student(roll_no):
 @app.route('/api/attendance/slots', methods=['GET'])
 def get_attendance_slots():
     slots = LabSlot.query.all()
-    # Return slots in a format suitable for the attendance dropdown
-    return jsonify([{
-        'id': slot.id,
-        'display': f"{slot.course} - {slot.lab} ({slot.day}, {slot.time})",
-        'subSubgroups': [ssg_link.sub_subgroup.name for ssg_link in slot.assigned_sub_subgroups if ssg_link.sub_subgroup]
-    } for slot in slots]), 200
+    result = []
+    for slot in slots:
+        try:
+            subsubgroups = [
+                ssg_link.sub_subgroup.name 
+                for ssg_link in slot.assigned_sub_subgroups 
+                if ssg_link.sub_subgroup
+            ]
+            result.append({
+                'id': slot.id,
+                'display': f"{slot.course} - {slot.lab} ({slot.day}, {slot.time})",
+                'subSubgroups': subsubgroups
+            })
+        except Exception as e:
+            print(f"Error processing slot {slot.id}: {e}")
+    return jsonify(result), 200
+
 
 @app.route('/api/attendance/students', methods=['GET'])
 def get_students_for_attendance():
