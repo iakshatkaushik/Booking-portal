@@ -6,10 +6,11 @@ Flask-Cors==3.0.10
 
 # Database / data handling
 Flask-SQLAlchemy==3.0.3
-pandas==2.1.1
+pandas==2.2.2
+numpy==1.26.4
 
 # WSGI server for deployment
-gunicorn==21.2.0
+gunicorn==23.0.0
 
 # Optional: utilities
 Werkzeug==2.3.7
