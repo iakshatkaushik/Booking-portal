@@ -1,6 +1,15 @@
+# Core web framework
 Flask==2.3.2
+
+# CORS support
 Flask-Cors==3.0.10
+
+# Database / data handling
 Flask-SQLAlchemy==3.0.3
+pandas==2.1.1
+
+# WSGI server for deployment
+gunicorn==21.2.0
+
+# Optional: utilities
 Werkzeug==2.3.7
-pandas==2.0.3
-gunicorn
