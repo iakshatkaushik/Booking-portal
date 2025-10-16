@@ -1,5 +1,5 @@
 Flask==2.3.2
-Flask-Cors==3.1.1
+Flask-Cors==3.1.2
 Flask-SQLAlchemy==3.0.3
 Werkzeug==2.3.7
 pandas==2.1.1
