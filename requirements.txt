@@ -1,16 +1,21 @@
-# Core web framework
+blinker==1.9.0
+click==8.3.0
+et_xmlfile==2.0.0
 Flask==2.3.2
-
-# CORS support
 Flask-Cors==3.0.10
-
-# Database / data handling
 Flask-SQLAlchemy==3.0.3
-pandas==2.2.2
-numpy==1.26.4
-
-# WSGI server for deployment
 gunicorn==23.0.0
-
-# Optional: utilities
+itsdangerous==2.2.0
+Jinja2==3.1.6
+MarkupSafe==3.0.3
+numpy==1.26.4
+openpyxl==3.1.5
+packaging==25.0
+pandas==2.2.2
+python-dateutil==2.9.0.post0
+pytz==2025.2
+six==1.17.0
+SQLAlchemy==2.0.44
+typing_extensions==4.15.0
+tzdata==2025.2
 Werkzeug==2.3.7
