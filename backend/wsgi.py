@@ -1,5 +1,4 @@
-# wsgi.py
-from .app import app  # Import the Flask app object from app.py
+from main import app  # <-- Import Flask app from main.py
 
 if __name__ == "__main__":
     app.run()
