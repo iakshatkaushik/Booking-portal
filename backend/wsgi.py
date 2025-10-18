@@ -1,4 +1,6 @@
-from main import app  # <-- Import Flask app from main.py
+# backend/wsgi.py
+# Import the Flask app object from backend/app.py
+from backend.app import app
 
 if __name__ == "__main__":
     app.run()
