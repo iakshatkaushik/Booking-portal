@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -7,6 +7,7 @@ import io
 import datetime
 import uuid
 import os
+import openpyxl # Added for Excel export
 
 app = Flask(__name__)
 CORS(app) # Enable CORS for all routes
@@ -78,6 +79,7 @@ class LabSlot(db.Model):
     
     # Store assigned sub-subgroup IDs (many-to-many relationship)
     assigned_sub_subgroups = db.relationship('SlotSubSubgroup', backref='lab_slot', lazy=True, cascade="all, delete-orphan")
+    
 
     def to_dict(self):
         return {
@@ -444,6 +446,11 @@ def get_attendance_slots():
             result.append({
                 'id': slot.id,
                 'display': f"{slot.course} - {slot.lab} ({slot.day}, {slot.time})",
+                'course': slot.course, # Added for export filter
+                'lab': slot.lab, # Added for export filter
+                'day': slot.day, # Added for export filter
+                'time': slot.time, # Added for export filter
+                'groupName': slot.group_name, # Added for export filter
                 'subSubgroups': subsubgroups
             })
         except Exception as e:
@@ -534,6 +541,64 @@ def save_attendance():
     
     db.session.commit()
     return jsonify({"message": "Attendance saved successfully"}), 200
+
+# --- NEW: Attendance Export Endpoint ---
+@app.route('/api/attendance/export', methods=['GET'])
+def export_attendance():
+    slot_id = request.args.get('slotId')
+    sub_subgroup_id = request.args.get('subSubgroupId') # Changed to ID
+    start_date_str = request.args.get('startDate')
+    end_date_str = request.args.get('endDate')
+
+    query = Attendance.query.order_by(Attendance.date.desc(), Attendance.lab_slot_id)
+
+    if slot_id:
+        query = query.filter(Attendance.lab_slot_id == slot_id)
+    
+    if sub_subgroup_id: # Filter by actual sub_subgroup_id
+        # Need to join with Student table to filter by student's sub_subgroup
+        query = query.join(Student).filter(Student.sub_subgroup_id == sub_subgroup_id)
+
+    if start_date_str:
+        query = query.filter(Attendance.date >= start_date_str)
+    if end_date_str:
+        query = query.filter(Attendance.date <= end_date_str)
+
+    attendance_records = query.all()
+
+    # Prepare data for DataFrame
+    export_data = []
+    for record in attendance_records:
+        slot = record.lab_slot
+        student = record.student
+        export_data.append({
+            'Roll No': record.roll_no,
+            'Student Name': student.name if student else 'N/A',
+            'Sub-subgroup': student.sub_subgroup.name if student and student.sub_subgroup else 'N/A',
+            'Course': slot.course if slot else 'N/A',
+            'Lab': slot.lab if slot else 'N/A',
+            'Day': slot.day if slot else 'N/A',
+            'Time': slot.time if slot else 'N/A',
+            'Date': record.date,
+            'Status': record.status,
+            'Marked By': record.marked_by,
+            'Marked At': record.marked_at
+        })
+
+    if not export_data:
+        return jsonify({"message": "No attendance data found for the selected filters."}), 404
+
+    df = pd.DataFrame(export_data)
+
+    # Create an in-memory Excel file
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Attendance')
+    output.seek(0)
+
+    filename = f"attendance_export_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    return send_file(output, as_attachment=True, download_name=filename, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
 
 # --- Public Schedule (for index.html) ---
 @app.route('/api/public_schedule', methods=['GET'])

@@ -35,10 +35,10 @@
     <main class="container mx-auto my-8 p-4 flex-grow">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition duration-300">
-                <div class="text-center">
+                <div class="text-center flex flex-col h-full"> <!-- Added flexbox for vertical alignment -->
                     <i class="fas fa-calendar-alt text-red-700 text-4xl mb-4"></i>
                     <h3 class="text-xl font-bold mb-2">Slot Management</h3>
-                    <p class="text-gray-600 mb-4">Create, edit, and delete lab slots.</p>
+                    <p class="text-gray-600 mb-4 flex-grow">Create, edit, and delete lab slots.</p> <!-- flex-grow to push button down -->
                     <button class="bg-red-700 text-white px-5 py-2 rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-opacity-50 transition duration-300"
                             onclick="showSection('slotManagementSection')">
                         Manage Slots
@@ -47,10 +47,10 @@
             </div>
 
             <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition duration-300">
-                <div class="text-center">
+                <div class="text-center flex flex-col h-full"> <!-- Added flexbox for vertical alignment -->
                     <i class="fas fa-users text-red-700 text-4xl mb-4"></i>
                     <h3 class="text-xl font-bold mb-2">Group Management</h3>
-                    <p class="text-gray-600 mb-4">Manage main groups, subgroups, and auto-generate sub-subgroups.</p>
+                    <p class="text-gray-600 mb-4 flex-grow">Manage main groups, subgroups, and auto-generate sub-subgroups.</p> <!-- flex-grow to push button down -->
                     <button class="bg-red-700 text-white px-5 py-2 rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-opacity-50 transition duration-300"
                             onclick="showSection('groupManagementSection')">
                         Manage Groups
@@ -59,10 +59,10 @@
             </div>
 
             <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition duration-300">
-                <div class="text-center">
+                <div class="text-center flex flex-col h-full"> <!-- Added flexbox for vertical alignment -->
                     <i class="fas fa-user-graduate text-red-700 text-4xl mb-4"></i>
                     <h3 class="text-xl font-bold mb-2">Student Management</h3>
-                    <p class="text-gray-600 mb-4">Upload and view student details.</p>
+                    <p class="text-gray-600 mb-4 flex-grow">Upload and view student details.</p> <!-- flex-grow to push button down -->
                     <button class="bg-red-700 text-white px-5 py-2 rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-opacity-50 transition duration-300"
                             onclick="showSection('studentManagementSection')">
                         Manage Students
@@ -71,10 +71,10 @@
             </div>
 
             <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition duration-300">
-                <div class="text-center">
+                <div class="text-center flex flex-col h-full"> <!-- Added flexbox for vertical alignment -->
                     <i class="fas fa-clipboard-check text-red-700 text-4xl mb-4"></i>
                     <h3 class="text-xl font-bold mb-2">Attendance Marking</h3>
-                    <p class="text-gray-600 mb-4">Mark attendance for specific slots and groups.</p>
+                    <p class="text-gray-600 mb-4 flex-grow">Mark attendance for specific slots and groups.</p> <!-- flex-grow to push button down -->
                     <button class="bg-red-700 text-white px-5 py-2 rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-opacity-50 transition duration-300"
                             onclick="showSection('attendanceMarkingSection')">
                         Mark Attendance
@@ -90,12 +90,12 @@
                 <div>
                     <label for="slotCourse" class="block text-gray-700 text-sm font-bold mb-2">Course:</label>
                     <input type="text" id="slotCourse" placeholder="e.g., CO201" required
-                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-700">
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-700">
                 </div>
                 <div>
                     <label for="slotLab" class="block text-gray-700 text-sm font-bold mb-2">Lab:</label>
                     <input type="text" id="slotLab" placeholder="e.g., L201" required
-                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-700">
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-700">
                 </div>
                 <div>
                     <label for="slotDay" class="block text-gray-700 text-sm font-bold mb-2">Day:</label>
@@ -123,8 +123,16 @@
                         <option value="">Select Main Group</option>
                     </select>
                 </div>
-                 <div class="md:col-span-2">
-                    <label for="slotSubSubgroups" class="block text-gray-700 text-sm font-bold mb-2">Assign Sub-subgroups:</label>
+                <div class="md:col-span-2">
+                    <!-- START: Changes for Select All alignment and bolding -->
+                    <div class="flex items-center justify-between mb-0"> <!-- Changed mb-2 to mb-0 for tighter alignment -->
+                        <label for="slotSubSubgroups" class="block text-gray-700 text-sm font-bold">Assign Sub-subgroups:</label>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="selectAllSubSubgroups" class="form-checkbox h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-700">
+                            <label for="selectAllSubSubgroups" class="ml-2 block text-sm leading-5 text-gray-900 font-bold">Select All</label> <!-- Added font-bold here -->
+                        </div>
+                    </div>
+                    <!-- END: Changes for Select All alignment and bolding -->
                     <div id="subSubgroupCheckboxes" class="flex flex-wrap gap-2 p-2 border rounded-md bg-gray-50 max-h-32 overflow-y-auto">
                         <p class="text-gray-500">Select a main group to see sub-subgroups.</p>
                     </div>
@@ -289,12 +297,51 @@
                     class="bg-red-700 text-white px-6 py-3 rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-opacity-50 transition duration-300 w-full md:w-auto">
                 Save Attendance
             </button>
+
+            <!-- New Attendance Export Section -->
+            <hr class="my-8 border-t border-gray-200">
+            <h3 class="text-2xl font-bold text-red-700 mb-6">Export Attendance</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label for="exportAttendanceSlot" class="block text-gray-700 text-sm font-bold mb-2">Filter by Slot:</label>
+                    <select id="exportAttendanceSlot"
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-700">
+                        <option value="">All Slots</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="exportAttendanceSubSubgroup" class="block text-gray-700 text-sm font-bold mb-2">Filter by Sub-subgroup:</label>
+                    <select id="exportAttendanceSubSubgroup" disabled
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-700 bg-gray-100">
+                        <option value="">All Sub-subgroups</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="exportStartDate" class="block text-gray-700 text-sm font-bold mb-2">Start Date:</label>
+                    <input type="date" id="exportStartDate"
+                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-700">
+                </div>
+                <div>
+                    <label for="exportEndDate" class="block text-gray-700 text-sm font-bold mb-2">End Date:</label>
+                    <input type="date" id="exportEndDate"
+                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-700">
+                </div>
+            </div>
+
+            <button id="exportAttendanceBtn"
+                    class="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-opacity-50 transition duration-300 w-full md:w-auto">
+                <i class="fas fa-file-csv mr-2"></i> Export Attendance as CSV
+            </button>
+            <p id="exportAttendanceStatus" class="mt-2 text-sm text-green-600 hidden"></p>
+            <p id="exportAttendanceError" class="mt-2 text-sm text-red-600 hidden"></p>
         </div>
     </main>
-
-  <footer class="bg-red-700 text-white text-center p-4 mt-auto">
-    <p>&copy; 2025 Thapar Institute Of Engineering & Technology. All rights reserved.</p>
-  </footer>
+    <footer class="bg-red-700 text-white text-center p-4 mt-auto">
+        <p>&copy; 2025 Thapar Institute Of Engineering & Technology. All rights reserved.</p>
+    </footer>
+    <!-- SheetJS CDN - Make sure this is present and correct in your project -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/static/js/dashboard.js"></script>
 </body>
 </html>
