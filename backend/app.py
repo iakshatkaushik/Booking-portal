@@ -25,26 +25,36 @@ app.config['SECRET_KEY'] = 'your_super_secret_key_here' # Change this in product
 db = SQLAlchemy(app)
 
 # Serve frontend HTML files
+import os
+from flask import Flask, send_from_directory
+
+app = Flask(__name__)
+
+# Base directory of backend
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# --- Serve frontend HTML files ---
 @app.route('/')
 def index():
-    return send_from_directory(BASE_DIR, 'index.html')
+    return send_from_directory(os.path.join(BASE_DIR, '..'), 'index.html')
 
 @app.route('/student.html')
 def student_page():
-    return send_from_directory(BASE_DIR, 'student.html')
+    return send_from_directory(os.path.join(BASE_DIR, '..'), 'student.html')
 
 @app.route('/admin/<path:filename>')
 def admin_page(filename):
-    return send_from_directory(os.path.join(BASE_DIR, 'admin'), filename)
+    return send_from_directory(os.path.join(BASE_DIR, '..', 'admin'), filename)
 
-# Serve static files (CSS, JS, assets)
+# --- Serve static files (CSS, JS) ---
 @app.route('/static/<path:filename>')
 def static_files(filename):
-    return send_from_directory(os.path.join(BASE_DIR, 'static'), filename)
+    return send_from_directory(os.path.join(BASE_DIR, '..', 'static'), filename)
 
+# --- Serve assets (images, logos) ---
 @app.route('/assets/<path:filename>')
 def asset_files(filename):
-    return send_from_directory(os.path.join(BASE_DIR, 'assets'), filename)
+    return send_from_directory(os.path.join(BASE_DIR, '..', 'assets'), filename)
 
 
 # --- Database Models (defined in models.py, but keeping it simple for now) ---
