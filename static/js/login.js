@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('adminUsername', data.user.username);
 
                 // Redirect to dashboard
-                window.location.href = 'dashboard.html';
+                window.location.href = '/admin/dashboard.html';
             } else if (response.status === 401) {
                 loginError.classList.remove('hidden'); // Show login error
             } else {
