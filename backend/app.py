@@ -22,7 +22,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lab_portal.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'your_super_secret_key_here' # Change this in production!
 
-db = SQLAlchemy(app)
+db = SQLAlchemy()
+
 
 # Serve frontend HTML files
 import os
