@@ -8,6 +8,11 @@ import datetime
 import uuid
 import os
 import openpyxl # Added for Excel export
+from flask import send_from_directory
+# Path to root of project (one level above backend/)
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+
 
 app = Flask(__name__)
 CORS(app) # Enable CORS for all routes
@@ -18,6 +23,29 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'your_super_secret_key_here' # Change this in production!
 
 db = SQLAlchemy(app)
+
+# Serve frontend HTML files
+@app.route('/')
+def index():
+    return send_from_directory(BASE_DIR, 'index.html')
+
+@app.route('/student.html')
+def student_page():
+    return send_from_directory(BASE_DIR, 'student.html')
+
+@app.route('/admin/<path:filename>')
+def admin_page(filename):
+    return send_from_directory(os.path.join(BASE_DIR, 'admin'), filename)
+
+# Serve static files (CSS, JS, assets)
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    return send_from_directory(os.path.join(BASE_DIR, 'static'), filename)
+
+@app.route('/assets/<path:filename>')
+def asset_files(filename):
+    return send_from_directory(os.path.join(BASE_DIR, 'assets'), filename)
+
 
 # --- Database Models (defined in models.py, but keeping it simple for now) ---
 
@@ -640,3 +668,7 @@ if __name__ == '__main__':
         create_tables_and_seed_data()
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
+
+@app.route('/')
+def home():
+    return "Server is running!"
