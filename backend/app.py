@@ -9,27 +9,29 @@ import uuid
 import os
 import openpyxl # Added for Excel export
 from flask import send_from_directory
+import os
+from flask import Flask, send_from_directory
 # Path to root of project (one level above backend/)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 
 
-app = Flask(__name__)
-CORS(app) # Enable CORS for all routes
+# app = Flask(__name__)
+# CORS(app) # Enable CORS for all routes
 
-# --- Configuration ---
+# # --- Configuration ---
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lab_portal.db'
+# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# app.config['SECRET_KEY'] = 'your_super_secret_key_here' # Change this in production!
+db = SQLAlchemy()
+app = Flask(__name__)
+CORS(app)
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lab_portal.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'your_super_secret_key_here' # Change this in production!
+app.config['SECRET_KEY'] = 'your_secret_key_here'
 
-db = SQLAlchemy()
-
-
-# Serve frontend HTML files
-import os
-from flask import Flask, send_from_directory
-
-app = Flask(__name__)
+db.init_app(app)  # <-- crucial for Flask-SQLAlchemy 3.x
 
 # Base directory of backend
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
