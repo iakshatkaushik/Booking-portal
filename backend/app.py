@@ -56,9 +56,11 @@ def static_files(filename):
     return send_from_directory(os.path.join(BASE_DIR, '..', 'static'), filename)
 
 # --- Serve assets (images, logos) ---
-"""@app.route('/assets/<path:filename>')
+"""
+@app.route('/assets/<path:filename>')
 def asset_files(filename):
-    return send_from_directory(os.path.join(BASE_DIR, '..', 'assets'), filename)"""
+    return send_from_directory(os.path.join(BASE_DIR, '..', 'assets'), filename)
+"""
 
 @app.route('/admin/<path:filename>')
 def admin_page(filename):
