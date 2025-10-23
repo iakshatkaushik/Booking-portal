@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
+from flask import abort, safe_join
 from werkzeug.security import generate_password_hash, check_password_hash
 import pandas as pd
 import io
@@ -55,9 +56,16 @@ def static_files(filename):
     return send_from_directory(os.path.join(BASE_DIR, '..', 'static'), filename)
 
 # --- Serve assets (images, logos) ---
-@app.route('/assets/<path:filename>')
+"""@app.route('/assets/<path:filename>')
 def asset_files(filename):
-    return send_from_directory(os.path.join(BASE_DIR, '..', 'assets'), filename)
+    return send_from_directory(os.path.join(BASE_DIR, '..', 'assets'), filename)"""
+
+@app.route('/admin/<path:filename>')
+def admin_page(filename):
+    safe_path = safe_join(os.path.join(BASE_DIR, '..', 'admin'), filename)
+    if not os.path.exists(safe_path):
+        abort(404)
+    return send_from_directory(os.path.join(BASE_DIR, '..', 'admin'), filename)
 
 
 # --- Database Models (defined in models.py, but keeping it simple for now) ---
