@@ -11,7 +11,7 @@ async function showStudentSlot(rollNo) {
     displayDiv.innerHTML = `<p class="text-gray-600">Fetching student data...</p>`;
 
     try {
-        const response = await fetch(`https://booking-portal-2-ueub.onrender.com/api/student_lookup/${rollNo}`);
+        const response = await fetch(`http://127.0.0.1:5000/api/student_lookup/${rollNo}`);
         if (response.status === 404) {
             displayDiv.innerHTML = `<p class="text-red-700">Student with Roll No. <b>${rollNo}</b> not found.</p>`;
             return;

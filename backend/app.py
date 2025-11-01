@@ -1,38 +1,36 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, abort, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-from flask import abort, safe_join
+from werkzeug.utils import safe_join
 from werkzeug.security import generate_password_hash, check_password_hash
 import pandas as pd
 import io
 import datetime
 import uuid
 import os
-import openpyxl # Added for Excel export
-from flask import send_from_directory
-import os
-from flask import Flask, send_from_directory
-# Path to root of project (one level above backend/)
+import openpyxl  # For Excel export
+
+# Base directory (root of your project, one level above backend/)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
-
-
-# app = Flask(__name__)
-# CORS(app) # Enable CORS for all routes
-
-# # --- Configuration ---
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lab_portal.db'
-# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# app.config['SECRET_KEY'] = 'your_super_secret_key_here' # Change this in production!
-db = SQLAlchemy()
-app = Flask(__name__)
+# ✅ Create Flask app with correct static folder
+app = Flask(
+    __name__,
+    static_folder=os.path.join(BASE_DIR, 'static'),
+    static_url_path='/static'
+)
 CORS(app)
+
+# ✅ Configure database before initializing SQLAlchemy
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'instance', 'lab_portal.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lab_portal.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'your_secret_key_here'
 
-db.init_app(app)  # <-- crucial for Flask-SQLAlchemy 3.x
 
 # Base directory of backend
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -46,9 +44,9 @@ def index():
 def student_page():
     return send_from_directory(os.path.join(BASE_DIR, '..'), 'student.html')
 
-@app.route('/admin/<path:filename>')
-def admin_page(filename):
-    return send_from_directory(os.path.join(BASE_DIR, '..', 'admin'), filename)
+# @app.route('/admin/<path:filename>')
+# def admin_page(filename):
+#     return send_from_directory(os.path.join(BASE_DIR, '..', 'admin'), filename)
 
 # --- Serve static files (CSS, JS) ---
 @app.route('/static/<path:filename>')
@@ -657,6 +655,11 @@ def get_public_schedule():
     slots = LabSlot.query.all()
     return jsonify([slot.to_dict() for slot in slots]), 200
 
+@app.route('/api/subsubgroups/all', methods=['GET'])
+def get_all_subsubgroups():
+    sub_subgroups = SubSubgroup.query.all()
+    return jsonify([ssg.to_dict() for ssg in sub_subgroups])
+
 # --- Student Lookup (for student.html) ---
 @app.route('/api/student_lookup/<string:roll_no>', methods=['GET'])
 def student_lookup(roll_no):
@@ -692,6 +695,6 @@ if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
 
-@app.route('/')
-def home():
-    return "Server is running!"
+# @app.route('/')
+# def home():
+#     return "Server is running!"
