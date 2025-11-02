@@ -18,7 +18,7 @@ async function renderPublicSchedule() {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const slots = await response.json(); // Backend returns array of slot objects
 
-        const timeSlots = generateTimeSlots(); // Get the predefined time slots
+        const timeSlots = generateTimeSlots(); // Get the predefined time slots using a helper function that creates time intervals like: ["09:00 - 10:00", "10:00 - 11:00", "11:00 - 12:00", ...] which ensures that the table always has the same rows (one per time period)
 
         // Prepare a map for easy lookup: timeSlot -> day -> [slot details]
         const scheduleMap = {};
