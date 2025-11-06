@@ -64,7 +64,7 @@ function generateTimeSlots() {
     let startMinutes = 9 * 60; // Start at 9:00 AM
     const slotDuration = 50;   // 50-minute slot
     const buffer = 10;         // 10-minute break
-    const numberOfSlots = 6;   // total number of slots
+    const numberOfSlots = 9;   // total number of slots
 
     for (let i = 0; i < numberOfSlots; i++) {
         const endMinutes = startMinutes + slotDuration;
