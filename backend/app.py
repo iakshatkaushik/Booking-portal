@@ -9,6 +9,7 @@ import datetime
 import uuid
 import os
 import openpyxl  # For Excel export
+import jwt
 
 
 from dotenv import load_dotenv 
@@ -26,15 +27,14 @@ app = Flask(
 CORS(app)
 
 # ✅ Configure database before initializing SQLAlchemy
+os.makedirs(os.path.join(BASE_DIR, 'instance'), exist_ok=True)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'instance', 'lab_portal.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
-
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lab_portal.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-#app.config['SECRET_KEY'] = 'your_secret_key_here'
-app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', os.urandom(24))
+app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
+if not app.config['SECRET_KEY']:
+    raise ValueError("❌ SECRET_KEY not found! Set FLASK_SECRET_KEY in .env")
 
 
 
@@ -49,10 +49,6 @@ def index():
 @app.route('/student.html')
 def student_page():
     return send_from_directory(os.path.join(BASE_DIR, '..'), 'student.html')
-
-# @app.route('/admin/<path:filename>')
-# def admin_page(filename):
-#     return send_from_directory(os.path.join(BASE_DIR, '..', 'admin'), filename)
 
 # --- Serve static files (CSS, JS) ---
 @app.route('/static/<path:filename>')
@@ -233,10 +229,21 @@ def admin_login():
 
     user = User.query.filter_by(username=username).first()
 
-    if user and user.check_password(password):
-        # In a real app, you'd generate a JWT token here
-        return jsonify({"message": "Login successful", "token": "fake-jwt-token", "user": user.to_dict()}), 200
-    return jsonify({"message": "Invalid credentials"}), 401
+    if not user or not user.check_password(password):
+        return jsonify({"message": "Invalid credentials"}), 401
+
+    token = jwt.encode(
+        {"user_id": user.id, "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=6)},
+        app.config["SECRET_KEY"],
+        algorithm="HS256"
+    )
+
+    return jsonify({
+    "message": "Login successful",
+    "token": token,
+    "user": user.to_dict()
+}), 200
+
 
 # --- Group Management ---
 @app.route('/api/groups', methods=['GET'])
@@ -726,6 +733,3 @@ if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
 
-# @app.route('/')
-# def home():
-#     return "Server is running!"
