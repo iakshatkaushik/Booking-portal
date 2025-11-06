@@ -200,14 +200,21 @@ class Attendance(db.Model):
 def create_tables_and_seed_data():
     db.create_all()
     # Seed admin user if not exists
-    if not User.query.filter_by(username='admin').first():
-        admin = User(username='admin')
-        admin.set_password('admin123') # Matches your login.js
-        db.session.add(admin)
-        db.session.commit()
-        print("Admin user created: admin / admin123")
+    if not User.query.filter_by(username=os.getenv('ADMIN_USERNAME')).first():
+        admin_username = os.getenv('ADMIN_USERNAME', 'admin')
+        admin_password = os.getenv('ADMIN_PASSWORD')
+        
+        if not admin_password:
+            print("⚠️ ADMIN_PASSWORD not set! Please set it in .env or server environment.")
+        else:
+            admin = User(username=admin_username)
+            admin.set_password(admin_password)
+            db.session.add(admin)
+            db.session.commit()
+            print(f"✅ Admin user created: {admin_username}")
     else:
-        print("Admin user already exists.")
+        print("✅ Admin user already exists.")
+
 
 # --- API Endpoints ---
 
