@@ -399,6 +399,24 @@ def update_slot(slot_id):
 
     db.session.commit()
     return jsonify(slot.to_dict()), 200
+@app.route('/api/slots/<string:slot_id>', methods=['GET'])
+def get_slot(slot_id):
+    slot = db.session.get(LabSlot, slot_id)  # safer than LabSlot.query.get
+
+    if slot is None:
+        return jsonify({"error": "Slot not found", "id": slot_id}), 404
+    
+    return jsonify(slot.to_dict()), 200
+
+
+@app.route('/api/groups/<string:group_id>', methods=['GET'])
+def get_group(group_id):
+    group = db.session.get(Group, group_id)  # safer method
+
+    if group is None:
+        return jsonify({"error": "Group not found", "id": group_id}), 404
+    
+    return jsonify(group.to_dict()), 200
 
 @app.route('/api/slots/<string:slot_id>', methods=['DELETE'])
 def delete_slot(slot_id):
