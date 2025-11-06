@@ -175,11 +175,12 @@ class Attendance(db.Model):
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     roll_no = db.Column(db.String(20), db.ForeignKey('student.roll_no'), nullable=False)
     lab_slot_id = db.Column(db.String(36), db.ForeignKey('lab_slot.id'), nullable=False)
+    lab_slot = db.relationship("LabSlot")
+    sub_subgroup_id = db.Column(db.String(36), db.ForeignKey('sub_subgroup.id'), nullable=False)
     date = db.Column(db.String(10), nullable=False) # YYYY-MM-DD
     status = db.Column(db.String(10), nullable=False) # 'Present', 'Absent'
     marked_by = db.Column(db.String(50), default='admin')
     marked_at = db.Column(db.String(30), default=lambda: datetime.datetime.now().isoformat())
-
     def to_dict(self):
         return {
             'id': self.id,
@@ -619,6 +620,7 @@ def save_attendance():
             new_attendance = Attendance(
                 roll_no=roll_no,
                 lab_slot_id=slot_id,
+                sub_subgroup_id=student.sub_subgroup_id,
                 date=today,
                 status=status,
                 marked_by='admin', # Hardcoded for now
@@ -726,6 +728,7 @@ def student_lookup(roll_no):
         'assignedSlots': assigned_slots,
         'attendanceRecords': attendance_data
     }), 200
+
 
 if __name__ == '__main__':
     with app.app_context():
