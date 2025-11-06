@@ -78,14 +78,31 @@ async function renderPublicSchedule() {
  */
 function generateTimeSlots() {
     const slots = [];
-    let startHour = 9; // Start from 9 AM
-    for (let i = 0; i < 6; i++) { // 6 one-hour sessions
-        const endHour = startHour + 1;
-        const startTime = `${String(startHour).padStart(2, '0')}:00`;
-        const endTime = `${String(endHour).padStart(2, '0')}:00`;
+    let startMinutes = 9 * 60; // Start at 9:00 AM
+    const slotDuration = 50;   // 50-minute slot
+    const buffer = 10;         // 10-minute break
+    const numberOfSlots = 9;   // total number of slots
+
+    for (let i = 0; i < numberOfSlots; i++) {
+        const endMinutes = startMinutes + slotDuration;
+
+        // --- Inline time formatting (no helper) ---
+        const formatTime = (totalMinutes) => {
+            let hour = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            const ampm = hour >= 12 ? "PM" : "AM";
+            hour = hour % 12;
+            if (hour === 0) hour = 12;
+            return `${hour}:${String(minutes).padStart(2, "0")} ${ampm}`;
+        };
+        // ------------------------------------------
+
+        const startTime = formatTime(startMinutes);
+        const endTime = formatTime(endMinutes);
         slots.push(`${startTime} - ${endTime}`);
-        // Buffer of 10 mins is implicitly handled as the next slot starts after the buffer
-        startHour = endHour;
+
+        startMinutes = endMinutes + buffer; // move ahead by 60 minutes total
     }
+
     return slots;
 }
