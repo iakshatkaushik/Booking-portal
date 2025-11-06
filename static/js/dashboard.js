@@ -1236,4 +1236,35 @@ document.addEventListener("DOMContentLoaded", () => {
       exportAttendanceError.classList.remove("hidden");
     }
   });
+
+  // ✅ DELETE ALL STUDENTS + ATTENDANCE DATA (CORRECT POSITION)
+  document
+    .getElementById("resetDataBtn")
+    ?.addEventListener("click", async () => {
+      if (
+        !confirm(
+          "⚠️ This will permanently delete ALL student AND attendance data.\n\nAre you absolutely sure?"
+        )
+      ) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/admin/reset`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.message || "Reset failed");
+        }
+
+        alert("✅ Database reset successful! Ready for new semester.");
+        location.reload();
+      } catch (error) {
+        console.error("Reset failed:", error);
+        alert("Failed to reset data: " + error.message);
+      }
+    });
 });

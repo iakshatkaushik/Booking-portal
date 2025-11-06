@@ -729,6 +729,20 @@ def student_lookup(roll_no):
         'attendanceRecords': attendance_data
     }), 200
 
+@app.route('/api/admin/reset', methods=['POST'])
+def reset_all_data():
+    try:
+        # ✅ Empty rows only — tables remain untouched
+        db.session.execute(db.text("DELETE FROM attendance"))
+        db.session.execute(db.text("DELETE FROM student"))
+        db.session.commit()
+
+        return jsonify({"message": "✅ All student & attendance data cleared successfully!"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Error resetting data: {str(e)}"}), 500
+
 
 if __name__ == '__main__':
     with app.app_context():
