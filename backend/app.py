@@ -10,6 +10,10 @@ import uuid
 import os
 import openpyxl  # For Excel export
 
+
+from dotenv import load_dotenv 
+load_dotenv()  # ✅ Loads variables from .env
+
 # Base directory (root of your project, one level above backend/)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
