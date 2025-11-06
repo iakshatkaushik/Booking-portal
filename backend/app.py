@@ -36,24 +36,19 @@ app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
 if not app.config['SECRET_KEY']:
     raise ValueError("❌ SECRET_KEY not found! Set FLASK_SECRET_KEY in .env")
 
-
-
-# Base directory of backend
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
 # --- Serve frontend HTML files ---
 @app.route('/')
 def index():
-    return send_from_directory(os.path.join(BASE_DIR, '..'), 'index.html')
+    return send_from_directory(BASE_DIR, 'index.html')
 
 @app.route('/student.html')
 def student_page():
-    return send_from_directory(os.path.join(BASE_DIR, '..'), 'student.html')
+    return send_from_directory(BASE_DIR, 'student.html')
 
 # --- Serve static files (CSS, JS) ---
 @app.route('/static/<path:filename>')
 def static_files(filename):
-    return send_from_directory(os.path.join(BASE_DIR, '..', 'static'), filename)
+    return send_from_directory(os.path.join(BASE_DIR, 'static'), filename)
 
 # --- Serve assets (images, logos) ---
 """
@@ -64,10 +59,10 @@ def asset_files(filename):
 
 @app.route('/admin/<path:filename>')
 def admin_page(filename):
-    safe_path = safe_join(os.path.join(BASE_DIR, '..', 'admin'), filename)
+    safe_path = safe_join(os.path.join(BASE_DIR,'admin'), filename)
     if not os.path.exists(safe_path):
         abort(404)
-    return send_from_directory(os.path.join(BASE_DIR, '..', 'admin'), filename)
+    return send_from_directory(os.path.join(BASE_DIR,'admin'), filename)
 
 
 # --- Database Models (defined in models.py, but keeping it simple for now) ---
@@ -737,7 +732,7 @@ def reset_all_data():
         db.session.execute(db.text("DELETE FROM student"))
         db.session.commit()
 
-        return jsonify({"message": "✅ All student & attendance data cleared successfully!"}), 200
+        return jsonify({"message": "All student & attendance data cleared successfully!"}), 200
 
     except Exception as e:
         db.session.rollback()

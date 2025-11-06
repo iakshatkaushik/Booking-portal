@@ -1243,7 +1243,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ?.addEventListener("click", async () => {
       if (
         !confirm(
-          "⚠️ This will permanently delete ALL student AND attendance data.\n\nAre you absolutely sure?"
+          "This will permanently delete ALL student AND attendance data.\nAre you absolutely sure?"
         )
       ) {
         return;
@@ -1260,7 +1260,7 @@ document.addEventListener("DOMContentLoaded", () => {
           throw new Error(err.message || "Reset failed");
         }
 
-        alert("✅ Database reset successful! Ready for new semester.");
+        alert("Database reset successful.");
         location.reload();
       } catch (error) {
         console.error("Reset failed:", error);
