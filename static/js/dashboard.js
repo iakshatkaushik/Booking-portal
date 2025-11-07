@@ -91,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
    */
   function generateTimeSlots() {
     const slots = [];
-    let startMinutes = 9 * 60; // Start at 9:00 AM
+    let startMinutes = 8 * 60; // Start at 8:00 AM
     const slotDuration = 50; // 50-minute slot
     const buffer = 10; // 10-minute break
     const numberOfSlots = 9; // total number of slots

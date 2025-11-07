@@ -8,17 +8,16 @@ import io
 import datetime
 import uuid
 import os
-import openpyxl  # For Excel export
+import openpyxl  
 import jwt
 
 
 from dotenv import load_dotenv 
-load_dotenv()  # ✅ Loads variables from .env
+load_dotenv()  
 
-# Base directory (root of your project, one level above backend/)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
-# ✅ Create Flask app with correct static folder
+
 app = Flask(
     __name__,
     static_folder=os.path.join(BASE_DIR, 'static'),
@@ -26,7 +25,6 @@ app = Flask(
 )
 CORS(app)
 
-# ✅ Configure database before initializing SQLAlchemy
 os.makedirs(os.path.join(BASE_DIR, 'instance'), exist_ok=True)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'instance', 'lab_portal.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -34,9 +32,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
 if not app.config['SECRET_KEY']:
-    raise ValueError("❌ SECRET_KEY not found! Set FLASK_SECRET_KEY in .env")
+    raise ValueError(" SECRET_KEY not found! Set FLASK_SECRET_KEY in .env")
 
-# --- Serve frontend HTML files ---
 @app.route('/')
 def index():
     return send_from_directory(BASE_DIR, 'index.html')
@@ -45,12 +42,10 @@ def index():
 def student_page():
     return send_from_directory(BASE_DIR, 'student.html')
 
-# --- Serve static files (CSS, JS) ---
 @app.route('/static/<path:filename>')
 def static_files(filename):
     return send_from_directory(os.path.join(BASE_DIR, 'static'), filename)
 
-# --- Serve assets (images, logos) ---
 """
 @app.route('/assets/<path:filename>')
 def asset_files(filename):
@@ -63,9 +58,6 @@ def admin_page(filename):
     if not os.path.exists(safe_path):
         abort(404)
     return send_from_directory(os.path.join(BASE_DIR,'admin'), filename)
-
-
-# --- Database Models (defined in models.py, but keeping it simple for now) ---
 
 class User(db.Model):
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -119,11 +111,10 @@ class LabSlot(db.Model):
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     course = db.Column(db.String(20), nullable=False)
     lab = db.Column(db.String(20), nullable=False)
-    day = db.Column(db.String(10), nullable=False) # e.g., 'Monday'
-    time = db.Column(db.String(20), nullable=False) # e.g., '09:00 - 10:00'
-    group_name = db.Column(db.String(50), nullable=False) # Store the group name for display simplicity
+    day = db.Column(db.String(10), nullable=False) 
+    time = db.Column(db.String(20), nullable=False) 
+    group_name = db.Column(db.String(50), nullable=False) 
     
-    # Store assigned sub-subgroup IDs (many-to-many relationship)
     assigned_sub_subgroups = db.relationship('SlotSubSubgroup', backref='lab_slot', lazy=True, cascade="all, delete-orphan")
     
 
@@ -138,24 +129,19 @@ class LabSlot(db.Model):
             'subSubgroups': [
                 SubSubgroup.query.get(ssg_link.sub_subgroup_id).name
                 for ssg_link in self.assigned_sub_subgroups
-                if SubSubgroup.query.get(ssg_link.sub_subgroup_id) # Ensure sub-subgroup still exists
+                if SubSubgroup.query.get(ssg_link.sub_subgroup_id) 
             ]
         }
-
-# Association table for many-to-many between LabSlot and SubSubgroup
 class SlotSubSubgroup(db.Model):
     lab_slot_id = db.Column(db.String(36), db.ForeignKey('lab_slot.id'), primary_key=True)
     sub_subgroup_id = db.Column(db.String(36), db.ForeignKey('sub_subgroup.id'), primary_key=True)
-    sub_subgroup = db.relationship("SubSubgroup")  # Only this relationship is needed
-
-
+    sub_subgroup = db.relationship("SubSubgroup")  
 
 class Student(db.Model):
-    roll_no = db.Column(db.String(20), primary_key=True) # Roll No as PK
+    roll_no = db.Column(db.String(20), primary_key=True) 
     name = db.Column(db.String(100), nullable=False)
-    sub_subgroup_id = db.Column(db.String(36), db.ForeignKey('sub_subgroup.id'), nullable=False) # Link to SubSubgroup
+    sub_subgroup_id = db.Column(db.String(36), db.ForeignKey('sub_subgroup.id'), nullable=False) 
 
-    # Relationships
     attendance_records = db.relationship('Attendance', backref='student', lazy=True, cascade="all, delete-orphan")
 
     def to_dict(self):
@@ -180,7 +166,7 @@ class Attendance(db.Model):
         return {
             'id': self.id,
             'rollNo': self.roll_no,
-            'name': self.student.name if self.student else 'N/A', # Fetch student name via relationship
+            'name': self.student.name if self.student else 'N/A', 
             'subSubgroup': self.student.sub_subgroup.name if self.student and self.student.sub_subgroup else 'N/A',
             'slotId': self.lab_slot_id,
             'course': self.lab_slot.course if self.lab_slot else 'N/A',
@@ -193,30 +179,24 @@ class Attendance(db.Model):
             'markedAt': self.marked_at
         }
 
-# --- Initial Data & Database Creation ---
 
 def create_tables_and_seed_data():
     db.create_all()
-    # Seed admin user if not exists
     if not User.query.filter_by(username=os.getenv('ADMIN_USERNAME')).first():
         admin_username = os.getenv('ADMIN_USERNAME', 'admin')
         admin_password = os.getenv('ADMIN_PASSWORD')
         
         if not admin_password:
-            print("⚠️ ADMIN_PASSWORD not set! Please set it in .env or server environment.")
+            print("ADMIN_PASSWORD not set! Please set it in .env or server environment.")
         else:
             admin = User(username=admin_username)
             admin.set_password(admin_password)
             db.session.add(admin)
             db.session.commit()
-            print(f"✅ Admin user created: {admin_username}")
+            print(f"Admin user created: {admin_username}")
     else:
-        print("✅ Admin user already exists.")
+        print("Admin user already exists.")
 
-
-# --- API Endpoints ---
-
-# Admin Login
 @app.route('/api/admin/login', methods=['POST'])
 def admin_login():
     data = request.get_json()
@@ -240,8 +220,6 @@ def admin_login():
     "user": user.to_dict()
 }), 200
 
-
-# --- Group Management ---
 @app.route('/api/groups', methods=['GET'])
 def get_groups():
     groups = Group.query.all()
@@ -262,8 +240,7 @@ def create_group():
     db.session.add(new_group)
     db.session.commit()
 
-    # Auto-generate 6 sub-subgroups
-    sub_subgroup_suffixes = ['A', 'B', 'C', 'D', 'E', 'F'] # Changed to uppercase for consistency
+    sub_subgroup_suffixes = ['A', 'B', 'C', 'D', 'E', 'F']
     for suffix in sub_subgroup_suffixes:
         sub_subgroup_name = f"{name}-{suffix}"
         new_sub_subgroup = SubSubgroup(name=sub_subgroup_name, group_id=new_group.id)
@@ -284,7 +261,6 @@ def update_group(group_id):
     if not name:
         return jsonify({"message": "Group name is required"}), 400
 
-    # Check for duplicate name if changed
     if name != group.name and Group.query.filter_by(name=name).first():
         return jsonify({"message": f"Group '{name}' already exists"}), 409
 
@@ -292,22 +268,15 @@ def update_group(group_id):
     group.name = name
     db.session.commit()
 
-    # Re-generate sub-subgroups if group name changed (simpler approach for now)
-    # First, delete old sub-subgroups
     SubSubgroup.query.filter_by(group_id=group.id).delete()
     db.session.commit()
 
-    # Then, create new ones based on the updated name
     sub_subgroup_suffixes = ['A', 'B', 'C', 'D', 'E', 'F']
     for suffix in sub_subgroup_suffixes:
         sub_subgroup_name = f"{name}-{suffix}"
         new_sub_subgroup = SubSubgroup(name=sub_subgroup_name, group_id=group.id)
         db.session.add(new_sub_subgroup)
     db.session.commit()
-    
-    # Note: If group name changes, associated students' sub_subgroup_id would become invalid
-    # This would require a more complex migration or warning to the user.
-    # For now, we'll assume group names are somewhat stable or handled carefully by admin.
 
     return jsonify(group.to_dict()), 200
 
@@ -316,18 +285,11 @@ def delete_group(group_id):
     group = Group.query.get(group_id)
     if not group:
         return jsonify({"message": "Group not found"}), 404
-    
-    # Cascade delete for sub_subgroups is handled by SQLAlchemy cascade="all, delete-orphan"
-    # Ensure students associated with these sub_subgroups are also handled (e.g., set to null or deleted)
-    # For simplicity, students and attendance related to deleted groups/subgroups will become 'orphaned'
-    # in terms of their foreign key link, or could be explicitly deleted here if desired.
-    # The `cascade="all, delete-orphan"` on `sub_subgroups` relationship in Group model should handle this.
 
     db.session.delete(group)
     db.session.commit()
     return jsonify({"message": "Group deleted successfully"}), 200
 
-# --- Slot Management ---
 @app.route('/api/slots', methods=['GET'])
 def get_slots():
     slots = LabSlot.query.all()
@@ -341,18 +303,17 @@ def create_slot():
     day = data.get('day')
     time = data.get('time')
     group_name = data.get('groupName')
-    sub_subgroup_names = data.get('subSubgroups', []) # List of sub-subgroup names
+    sub_subgroup_names = data.get('subSubgroups', []) 
 
     if not all([course, lab, day, time, group_name, sub_subgroup_names]):
         return jsonify({"message": "Missing required fields"}), 400
     
-    # Check for duplicate slots (same day, time, lab)
     if LabSlot.query.filter_by(day=day, time=time, lab=lab).first():
         return jsonify({"message": "A slot for this lab, day, and time already exists."}), 409
 
     new_slot = LabSlot(course=course, lab=lab, day=day, time=time, group_name=group_name)
     db.session.add(new_slot)
-    db.session.flush() # Get ID before commit to link sub-subgroups
+    db.session.flush()
 
     for ssg_name in sub_subgroup_names:
         sub_subgroup = SubSubgroup.query.filter_by(name=ssg_name).first()
@@ -377,7 +338,6 @@ def update_slot(slot_id):
     group_name = data.get('groupName', slot.group_name)
     sub_subgroup_names = data.get('subSubgroups', [])
 
-    # Check for duplicate slots if day, time, or lab are changing
     if (day != slot.day or time != slot.time or lab != slot.lab) and \
        LabSlot.query.filter_by(day=day, time=time, lab=lab).filter(LabSlot.id != slot_id).first():
         return jsonify({"message": "A slot for this lab, day, and time already exists."}), 409
@@ -388,12 +348,9 @@ def update_slot(slot_id):
     slot.time = time
     slot.group_name = group_name
 
-    # Update assigned sub-subgroups
-    # First, clear existing links
     SlotSubSubgroup.query.filter_by(lab_slot_id=slot.id).delete()
-    db.session.flush() # Ensure deletions are processed before new additions
+    db.session.flush() 
 
-    # Then add new links
     for ssg_name in sub_subgroup_names:
         sub_subgroup = SubSubgroup.query.filter_by(name=ssg_name).first()
         if sub_subgroup:
@@ -404,7 +361,7 @@ def update_slot(slot_id):
     return jsonify(slot.to_dict()), 200
 @app.route('/api/slots/<string:slot_id>', methods=['GET'])
 def get_slot(slot_id):
-    slot = db.session.get(LabSlot, slot_id)  # safer than LabSlot.query.get
+    slot = db.session.get(LabSlot, slot_id)
 
     if slot is None:
         return jsonify({"error": "Slot not found", "id": slot_id}), 404
@@ -414,7 +371,7 @@ def get_slot(slot_id):
 
 @app.route('/api/groups/<string:group_id>', methods=['GET'])
 def get_group(group_id):
-    group = db.session.get(Group, group_id)  # safer method
+    group = db.session.get(Group, group_id) 
 
     if group is None:
         return jsonify({"error": "Group not found", "id": group_id}), 404
@@ -431,7 +388,6 @@ def delete_slot(slot_id):
     db.session.commit()
     return jsonify({"message": "Slot deleted successfully"}), 200
 
-# Helper to get all sub-subgroups for a given group name
 @app.route('/api/groups/<string:group_name>/subsubgroups', methods=['GET'])
 def get_subsubgroups_for_group(group_name):
     group = Group.query.filter_by(name=group_name).first()
@@ -440,7 +396,6 @@ def get_subsubgroups_for_group(group_name):
     
     return jsonify([ssg.name for ssg in group.sub_subgroups]), 200
 
-# --- Student Management ---
 @app.route('/api/students', methods=['GET'])
 def get_students():
     students = Student.query.all()
@@ -476,7 +431,7 @@ def upload_students_csv():
                     warnings.append(f"Skipping row {index+2} due to missing data: Roll No '{roll_no}', Name '{name}', Sub-subgroup '{sub_subgroup_name}'")
                     continue
                 
-                if roll_no in [s.roll_no for s in Student.query.all()]: # Basic check, could be optimized
+                if roll_no in [s.roll_no for s in Student.query.all()]: 
                     warnings.append(f"Skipping duplicate student: {roll_no}")
                     continue
 
@@ -494,7 +449,7 @@ def upload_students_csv():
             message = f"{new_students_count} new students uploaded successfully."
             if warnings:
                 message += " Warnings: " + "; ".join(warnings)
-                return jsonify({"message": message, "status": "warning"}), 202 # Accepted with warnings
+                return jsonify({"message": message, "status": "warning"}), 202 
             
             return jsonify({"message": message, "status": "success"}), 201
 
@@ -514,7 +469,6 @@ def delete_student(roll_no):
     db.session.commit()
     return jsonify({"message": "Student and associated attendance records deleted successfully"}), 200
 
-# --- Attendance Marking ---
 @app.route('/api/attendance/slots', methods=['GET'])
 def get_attendance_slots():
     slots = LabSlot.query.all()
@@ -529,11 +483,11 @@ def get_attendance_slots():
             result.append({
                 'id': slot.id,
                 'display': f"{slot.course} - {slot.lab} ({slot.day}, {slot.time})",
-                'course': slot.course, # Added for export filter
-                'lab': slot.lab, # Added for export filter
-                'day': slot.day, # Added for export filter
-                'time': slot.time, # Added for export filter
-                'groupName': slot.group_name, # Added for export filter
+                'course': slot.course, 
+                'lab': slot.lab, 
+                'day': slot.day, 
+                'time': slot.time, 
+                'groupName': slot.group_name, 
                 'subSubgroups': subsubgroups
             })
         except Exception as e:
@@ -557,11 +511,10 @@ def get_students_for_attendance():
     
     today = datetime.date.today().isoformat()
     
-    # Fetch existing attendance for this slot, sub-subgroup, and date
     existing_attendance_map = {
         att.roll_no: att.status
         for att in Attendance.query.filter_by(lab_slot_id=slot_id, date=today).all()
-        if att.student and att.student.sub_subgroup_id == sub_subgroup.id # Filter by sub-subgroup
+        if att.student and att.student.sub_subgroup_id == sub_subgroup.id 
     }
 
     students_data = []
@@ -594,14 +547,13 @@ def save_attendance():
     for record in attendance_records:
         roll_no = record.get('rollNo')
         status = record.get('status')
-        student_name = record.get('name') # Passed from frontend
+        student_name = record.get('name') 
         
         student = Student.query.get(roll_no)
         if not student:
             print(f"Warning: Student {roll_no} not found, skipping attendance record.")
             continue
 
-        # Find or create attendance record
         existing_attendance = Attendance.query.filter_by(
             roll_no=roll_no,
             lab_slot_id=slot_id,
@@ -618,7 +570,7 @@ def save_attendance():
                 sub_subgroup_id=student.sub_subgroup_id,
                 date=today,
                 status=status,
-                marked_by='admin', # Hardcoded for now
+                marked_by='admin', 
                 marked_at=datetime.datetime.now().isoformat()
             )
             db.session.add(new_attendance)
@@ -626,11 +578,10 @@ def save_attendance():
     db.session.commit()
     return jsonify({"message": "Attendance saved successfully"}), 200
 
-# --- NEW: Attendance Export Endpoint ---
 @app.route('/api/attendance/export', methods=['GET'])
 def export_attendance():
     slot_id = request.args.get('slotId')
-    sub_subgroup_id = request.args.get('subSubgroupId') # Changed to ID
+    sub_subgroup_id = request.args.get('subSubgroupId') 
     start_date_str = request.args.get('startDate')
     end_date_str = request.args.get('endDate')
 
@@ -639,8 +590,7 @@ def export_attendance():
     if slot_id:
         query = query.filter(Attendance.lab_slot_id == slot_id)
     
-    if sub_subgroup_id: # Filter by actual sub_subgroup_id
-        # Need to join with Student table to filter by student's sub_subgroup
+    if sub_subgroup_id: 
         query = query.join(Student).filter(Student.sub_subgroup_id == sub_subgroup_id)
 
     if start_date_str:
@@ -650,7 +600,6 @@ def export_attendance():
 
     attendance_records = query.all()
 
-    # Prepare data for DataFrame
     export_data = []
     for record in attendance_records:
         slot = record.lab_slot
@@ -662,7 +611,7 @@ def export_attendance():
             'Course': slot.course if slot else 'N/A',
             'Lab': slot.lab if slot else 'N/A',
             'Day': slot.day if slot else 'N/A',
-            'Time': slot.time if slot else 'N/A',
+            'Time Slot': slot.time if slot else 'N/A',
             'Date': record.date,
             'Status': record.status,
             'Marked By': record.marked_by,
@@ -674,7 +623,6 @@ def export_attendance():
 
     df = pd.DataFrame(export_data)
 
-    # Create an in-memory Excel file
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name='Attendance')
@@ -683,8 +631,6 @@ def export_attendance():
     filename = f"attendance_export_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     return send_file(output, as_attachment=True, download_name=filename, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
-
-# --- Public Schedule (for index.html) ---
 @app.route('/api/public_schedule', methods=['GET'])
 def get_public_schedule():
     slots = LabSlot.query.all()
@@ -695,17 +641,14 @@ def get_all_subsubgroups():
     sub_subgroups = SubSubgroup.query.all()
     return jsonify([ssg.to_dict() for ssg in sub_subgroups])
 
-# --- Student Lookup (for student.html) ---
 @app.route('/api/student_lookup/<string:roll_no>', methods=['GET'])
 def student_lookup(roll_no):
     student = Student.query.get(roll_no.upper())
     if not student:
         return jsonify({"message": f"Student with Roll No. {roll_no} not found."}), 404
     
-    # Get student's assigned sub-subgroup
     sub_subgroup = student.sub_subgroup
 
-    # Find slots where this sub-subgroup is assigned
     assigned_slots = []
     if sub_subgroup:
         slot_links = SlotSubSubgroup.query.filter_by(sub_subgroup_id=sub_subgroup.id).all()
@@ -714,7 +657,6 @@ def student_lookup(roll_no):
             if lab_slot:
                 assigned_slots.append(lab_slot.to_dict())
 
-    # Get student's attendance records
     attendance_records = Attendance.query.filter_by(roll_no=student.roll_no).order_by(Attendance.date.desc()).all()
     attendance_data = [att.to_dict() for att in attendance_records]
     
@@ -727,7 +669,6 @@ def student_lookup(roll_no):
 @app.route('/api/admin/reset', methods=['POST'])
 def reset_all_data():
     try:
-        # ✅ Empty rows only — tables remain untouched
         db.session.execute(db.text("DELETE FROM attendance"))
         db.session.execute(db.text("DELETE FROM student"))
         db.session.commit()
@@ -744,4 +685,3 @@ if __name__ == '__main__':
         create_tables_and_seed_data()
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
-
