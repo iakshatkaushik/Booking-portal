@@ -9,7 +9,7 @@ async function renderPublicSchedule() {
     scheduleBody.innerHTML = ''; 
 
     try {
-        const response = await fetch('http://127.0.0.1:5000/api/public_schedule');
+        const response = await fetch('http://172.16.75.46:5000/api/public_schedule');
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const slots = await response.json(); 
 
