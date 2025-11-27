@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginError = document.getElementById('loginError');
 
     loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault(); // Prevent default form submission
+        e.preventDefault(); 
 
         const username = usernameInput.value.trim();
         const password = passwordInput.value.trim();
@@ -22,15 +22,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.status === 200) {
                 const data = await response.json();
 
-                // ✅ Store login info
                 localStorage.setItem('isAdminLoggedIn', 'true');
                 localStorage.setItem('adminToken', data.token);
                 localStorage.setItem('adminUsername', data.user.username);
 
-                // Redirect to dashboard
                 window.location.href = '/admin/dashboard.html';
             } else if (response.status === 401) {
-                loginError.classList.remove('hidden'); // Show login error
+                loginError.classList.remove('hidden'); 
             } else {
                 console.error('Unexpected response:', response);
                 loginError.classList.remove('hidden');

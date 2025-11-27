@@ -1,4 +1,3 @@
-// student.html - Student slot and attendance lookup
 
 document.getElementById('student-lookup-form').onsubmit = function (e) {
     e.preventDefault();

@@ -1,41 +1,21 @@
-/* Custom CSS for Thapar Lab Slot Portal */
 
-/* Base font and text color, already mostly covered by Tailwind body classes */
-/* body {
-    /* Using Tailwind's default sans-serif font, but can specify Thapar's font if needed */
-    /* font-family: 'Montserrat', sans-serif; */
- */
-
-/* Custom color variables (optional, Tailwind handles most colors) */
-/* :root {
-    --thapar-red: #b30000;
-    --thapar-white: #ffffff;
-    --thapar-black: #000000;
-    --thapar-light-sky-blue: #e3f2fd;
-} */
-
-/* Apply Thapar Light Sky Blue to table backgrounds */
 .bg-light-sky-blue {
-    background-color: #e3f2fd; /* Light Sky Blue */
+    background-color: #e3f2fd; 
 }
 
-/* Specific styling for the table headers to ensure branding consistency */
 table thead th {
-    background-color: #b30000; /* Thapar Red */
-    color: #ffffff; /* White text */
+    background-color: #b30000; 
+    color: #ffffff; 
 }
 
-/* Border styles for consistency */
 table, table th, table td {
-    border-color: #cbd5e0; /* A light gray for borders */
+    border-color: #cbd5e0; 
 }
 
-/* Hover effect for table rows */
 .hover\:bg-light-blue-100:hover {
-    background-color: #e0f2f7; /* A slightly lighter blue on hover */
+    background-color: #e0f2f7; 
 }
 
-/* Specific styling for form radio buttons */
 .form-radio {
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -46,11 +26,11 @@ table, table th, table td {
     user-select: none;
     flex-shrink: 0;
     border-radius: 100%;
-    height: 1.25rem; /* Equivalent to h-5 */
-    width: 1.25rem; /* Equivalent to w-5 */
+    height: 1.25rem; 
+    width: 1.25rem; 
     border-width: 1px;
-    border-color: #D1D5DB; /* gray-300 */
-    color: #b30000; /* Thapar Red for checked state */
+    border-color: #D1D5DB; 
+    color: #b30000; 
 }
 
 .form-radio:checked {
@@ -59,12 +39,11 @@ table, table th, table td {
     background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='3'/%3e%3c/svg%3e");
 }
 
-/* Customizing the focus ring for form elements to match theme */
+
 .focus\:ring-red-700:focus {
-    --tw-ring-color: #b30000; /* Thapar Red */
+    --tw-ring-color: #b30000; 
 }
 
-/* Add some padding to the main content area on smaller screens */
 @media (max-width: 768px) {
     .container {
         padding-left: 1rem;
@@ -72,9 +51,8 @@ table, table th, table td {
     }
 }
 
-/* ---------- Buttons ---------- */
 button {
-    display: block;   /* full row */
-    width:auto;      /* stretch across */
-    margin-bottom: 0.5rem; /* small gap between */
+    display: block;   
+    width:auto;
+    margin-bottom: 0.5rem; 
 }

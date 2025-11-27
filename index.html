@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Thapar Lab Schedule</title>
-  <!-- Tailwind CSS CDN -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <!-- Custom styles for Thapar theme (optional, for overrides or specific components) -->
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body class="bg-white font-sans text-black min-h-screen flex flex-col">
@@ -36,7 +34,6 @@
   <!-- Main content -->
   <main class="container mx-auto flex-grow">
     <div id="schedule-display" class="overflow-x-auto">
-      <!-- Schedule table will be loaded here by JavaScript -->
       <table class="min-w-full bg-light-sky-blue border border-gray-200 rounded-lg shadow-sm">
         <thead class="bg-red-700 text-white">
           <tr>
@@ -49,7 +46,6 @@
           </tr>
         </thead>
         <tbody id="schedule-table-body" class="divide-y divide-gray-200">
-          <!-- Schedule rows will be dynamically inserted here -->
           <tr>
             <td colspan="6" class="text-center py-4 text-gray-500">Loading schedule...</td>
           </tr>
@@ -64,7 +60,6 @@
     Made by <a href="https://epoch-air.github.io/" style="text-decoration: underline;">Team Epoch</a>
   </footer>
 
-  <!-- Main JavaScript file -->
   <script src="/static/js/index.js"></script>
 </body>
 </html>
