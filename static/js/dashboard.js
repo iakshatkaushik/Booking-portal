@@ -1,13 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // const API_BASE_URL = "http://localhost:5000/api";
   const API_BASE_URL = "http://172.16.75.46:5000/api";
 
   let SSG_NAME_TO_ID = null;
 
   async function buildSubSubgroupMap() {
-    if (SSG_NAME_TO_ID) return; 
+    if (SSG_NAME_TO_ID) return;
     const res = await fetch(`${API_BASE_URL}/subsubgroups/all`);
     if (!res.ok) throw new Error(`Failed to load sub-subgroups: ${res.status}`);
-    const all = await res.json(); 
+    const all = await res.json();
     SSG_NAME_TO_ID = all.reduce((acc, ssg) => {
       acc[ssg.name] = ssg.id;
       return acc;
@@ -15,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (localStorage.getItem("isAdminLoggedIn") !== "true") {
-    window.location.href = "login.html"; 
+    window.location.href = "login.html";
   }
 
   document.getElementById("logoutBtn").addEventListener("click", () => {
@@ -43,11 +44,11 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("uploadError").classList.add("hidden");
       document.getElementById("studentCsvUpload").value = "";
     } else if (sectionId === "attendanceMarkingSection") {
-      populateAttendanceSlots(); 
+      populateAttendanceSlots();
 
       buildSubSubgroupMap()
         .then(() => {
-          populateExportAttendanceSlots(); 
+          populateExportAttendanceSlots();
         })
         .catch((err) => {
           console.error("Failed to load sub-subgroup map:", err);
@@ -80,10 +81,10 @@ document.addEventListener("DOMContentLoaded", () => {
    */
   function generateTimeSlots() {
     const slots = [];
-    let startMinutes = 8 * 60; 
-    const slotDuration = 50; 
-    const buffer = 10; 
-    const numberOfSlots = 9; 
+    let startMinutes = 8 * 60;
+    const slotDuration = 50;
+    const buffer = 10;
+    const numberOfSlots = 9;
 
     for (let i = 0; i < numberOfSlots; i++) {
       const endMinutes = startMinutes + slotDuration;
@@ -101,7 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const endTime = formatTime(endMinutes);
       slots.push(`${startTime} - ${endTime}`);
 
-      startMinutes = endMinutes + buffer; 
+      startMinutes = endMinutes + buffer;
     }
 
     return slots;
@@ -122,7 +123,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const cancelEditSlotBtn = document.getElementById("cancelEditSlotBtn");
   const selectAllSubSubgroupsCheckbox = document.getElementById(
     "selectAllSubSubgroups"
-  ); 
+  );
+
+  const slotGroupDropdown = document.getElementById("slotGroupDropdown");
+  const slotGroupDropdownBtn = document.getElementById("slotGroupDropdownBtn");
+
+  let selectedGroups = new Set();
 
   selectAllSubSubgroupsCheckbox.addEventListener("change", (event) => {
     const isChecked = event.target.checked;
@@ -132,6 +138,17 @@ document.addEventListener("DOMContentLoaded", () => {
         checkbox.checked = isChecked;
       });
   });
+
+  function handleGroupSelection(e) {
+    const value = e.target.value;
+    e.target.checked ? selectedGroups.add(value) : selectedGroups.delete(value);
+    slotGroupDropdownBtn.innerText =
+      selectedGroups.size === 0
+        ? "Select Main Group(s)"
+        : [...selectedGroups].join(", ");
+
+    populateSubSubgroupCheckboxes();
+  }
 
   function populateTimeSlotsSelect() {
     const timeSlots = generateTimeSlots();
@@ -184,55 +201,68 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       const groups = await response.json();
 
-      slotGroupSelect.innerHTML = '<option value="">Select Main Group</option>';
+      slotGroupDropdown.innerHTML = "";
+
       groups.forEach((group) => {
-        const option = document.createElement("option");
-        option.value = group.name;
-        option.textContent = group.name;
-        slotGroupSelect.appendChild(option);
+        const div = document.createElement("div");
+        div.classList.add("flex", "items-center", "mb-1");
+        div.innerHTML = `
+        <input type="checkbox" value="${group.name}" class="groupCheckbox h-4 w-4 text-red-600 border-gray-300 rounded">
+        <label class="ml-2 text-sm text-gray-700">${group.name}</label>
+      `;
+        slotGroupDropdown.appendChild(div);
       });
-      populateSubSubgroupCheckboxes(); 
+
+      slotGroupDropdown
+        .querySelectorAll(".groupCheckbox")
+        .forEach((cb) => cb.addEventListener("change", handleGroupSelection));
     } catch (error) {
-      console.error("Error fetching groups for slot select:", error);
-      alert("Failed to load groups for slot management.");
+      console.error("Error fetching groups:", error);
+      slotGroupDropdown.innerHTML =
+        '<p class="text-red-500">Failed to load groups.</p>';
     }
   }
 
-  slotGroupSelect.addEventListener("change", populateSubSubgroupCheckboxes);
   async function populateSubSubgroupCheckboxes() {
-    const selectedGroup = slotGroupSelect.value;
-    subSubgroupCheckboxesDiv.innerHTML = ""; 
-    selectAllSubSubgroupsCheckbox.checked = false; 
+    const picked = [...selectedGroups];
 
-    if (!selectedGroup) {
+    subSubgroupCheckboxesDiv.innerHTML = "";
+    selectAllSubSubgroupsCheckbox.checked = false;
+
+    if (selectedGroups.size === 0) {
       subSubgroupCheckboxesDiv.innerHTML =
         '<p class="text-gray-500">Select a main group to see sub-subgroups.</p>';
       return;
     }
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/groups/${selectedGroup}/subsubgroups`
-      );
-      if (!response.ok)
-        throw new Error(`HTTP error! status: ${response.status}`);
-      const subSubgroups = await response.json();
+      const all = new Set();
 
-      if (subSubgroups.length > 0) {
-        const sorted = [...subSubgroups].sort();
-        sorted.forEach((subSubgroup) => {
-          const div = document.createElement("div");
-          div.classList.add("flex", "items-center", "mr-4");
-          div.innerHTML = `
-                        <input type="checkbox" id="subSubgroup-${subSubgroup}" value="${subSubgroup}" class="h-4 w-4 text-red-700 border-gray-300 rounded focus:ring-red-700">
-                        <label for="subSubgroup-${subSubgroup}" class="ml-2 text-sm text-gray-700">${subSubgroup}</label>
-                    `;
-          subSubgroupCheckboxesDiv.appendChild(div);
-        });
-      } else {
-        subSubgroupCheckboxesDiv.innerHTML =
-          '<p class="text-gray-500">No sub-subgroups found for this group. Create groups first.</p>';
+      for (const group of selectedGroups) {
+        const response = await fetch(
+          `${API_BASE_URL}/groups/${group}/subsubgroups`
+        );
+        if (!response.ok)
+          throw new Error(`HTTP error! status: ${response.status}`);
+        const subs = await response.json();
+        subs.forEach((s) => all.add(s));
       }
+
+      if ([...all].length === 0) {
+        subSubgroupCheckboxesDiv.innerHTML =
+          '<p class="text-gray-500">No sub-subgroups found for selected groups.</p>';
+        return;
+      }
+
+      [...all].sort().forEach((sub) => {
+        const div = document.createElement("div");
+        div.classList.add("flex", "items-center", "mr-4");
+        div.innerHTML = `
+        <input type="checkbox" id="subSubgroup-${sub}" value="${sub}" class="h-4 w-4 text-red-700 border-gray-300 rounded focus:ring-red-700">
+        <label for="subSubgroup-${sub}" class="ml-2 text-sm text-gray-700">${sub}</label>
+      `;
+        subSubgroupCheckboxesDiv.appendChild(div);
+      });
     } catch (error) {
       console.error("Error fetching sub-subgroups:", error);
       subSubgroupCheckboxesDiv.innerHTML =
@@ -258,6 +288,12 @@ document.addEventListener("DOMContentLoaded", () => {
       slots.forEach((slot) => {
         const row = document.createElement("tr");
         row.classList.add("hover:bg-light-blue-100");
+        
+        // Handle groupName as array
+        const groupDisplay = Array.isArray(slot.groupName) 
+          ? slot.groupName.join(", ") 
+          : slot.groupName;
+        
         row.innerHTML = `
                     <td class="py-2 px-4 border-b border-gray-200">${
                       slot.course
@@ -272,7 +308,7 @@ document.addEventListener("DOMContentLoaded", () => {
                       slot.time
                     }</td>
                     <td class="py-2 px-4 border-b border-gray-200">${
-                      slot.groupName
+                      groupDisplay
                     }</td>
                     <td class="py-2 px-4 border-b border-gray-200">${
                       slot.subSubgroups ? slot.subSubgroups.join(", ") : "N/A"
@@ -301,12 +337,16 @@ document.addEventListener("DOMContentLoaded", () => {
     slotLabInput.value = "";
     slotDaySelect.value = "";
     slotTimeSelect.value = "";
-    slotGroupSelect.value = "";
-    populateSubSubgroupCheckboxes(); 
+    selectedGroups.clear();
+    slotGroupDropdownBtn.innerText = "Select Main Group(s)";
+    slotGroupDropdown.querySelectorAll('.groupCheckbox').forEach(cb => cb.checked = false);
+    populateSubSubgroupCheckboxes();
     addSlotBtn.textContent = "Add Slot";
     cancelEditSlotBtn.classList.add("hidden");
-    selectAllSubSubgroupsCheckbox.checked = false; 
+    selectAllSubSubgroupsCheckbox.checked = false;
   }
+
+  cancelEditSlotBtn.addEventListener("click", clearSlotForm);
 
   slotForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -316,7 +356,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const lab = slotLabInput.value.trim().toUpperCase();
     const day = slotDaySelect.value;
     const time = slotTimeSelect.value;
-    const groupName = slotGroupSelect.value;
+    const groupName = [...selectedGroups];
     const selectedSubSubgroups = Array.from(
       subSubgroupCheckboxesDiv.querySelectorAll(
         'input[type="checkbox"]:checked'
@@ -360,11 +400,11 @@ document.addEventListener("DOMContentLoaded", () => {
         );
       }
 
-      await response.json(); 
+      await response.json();
       renderSlots();
       clearSlotForm();
-      populateAttendanceSlots(); 
-      populateExportAttendanceSlots(); 
+      populateAttendanceSlots();
+      populateExportAttendanceSlots();
     } catch (error) {
       console.error("Error saving slot:", error);
       alert(`Failed to save slot: ${error.message}`);
@@ -386,7 +426,17 @@ document.addEventListener("DOMContentLoaded", () => {
       slotLabInput.value = slotToEdit.lab;
       slotDaySelect.value = slotToEdit.day;
       slotTimeSelect.value = slotToEdit.time;
-      slotGroupSelect.value = slotToEdit.groupName;
+      
+      // Handle multiple groups
+      selectedGroups.clear();
+      const groupNames = Array.isArray(slotToEdit.groupName) ? slotToEdit.groupName : [slotToEdit.groupName];
+      groupNames.forEach(name => selectedGroups.add(name));
+      slotGroupDropdownBtn.innerText = groupNames.join(", ");
+      
+      // Check the appropriate group checkboxes
+      slotGroupDropdown.querySelectorAll('.groupCheckbox').forEach(cb => {
+        cb.checked = selectedGroups.has(cb.value);
+      });
 
       await populateSubSubgroupCheckboxes();
       slotToEdit.subSubgroups.forEach((subSubgroup) => {
@@ -427,8 +477,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         renderSlots();
         clearSlotForm();
-        populateAttendanceSlots(); 
-        populateExportAttendanceSlots(); 
+        populateAttendanceSlots();
+        populateExportAttendanceSlots();
       } catch (error) {
         console.error("Error deleting slot:", error);
         alert(`Failed to delete slot: ${error.message}`);
@@ -492,6 +542,8 @@ document.addEventListener("DOMContentLoaded", () => {
     cancelEditGroupBtn.classList.add("hidden");
   }
 
+  cancelEditGroupBtn.addEventListener("click", clearGroupForm);
+
   groupForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -526,12 +578,12 @@ document.addEventListener("DOMContentLoaded", () => {
         );
       }
 
-      await response.json(); 
+      await response.json();
       renderGroups();
       clearGroupForm();
-      populateSlotGroupSelect(); 
-      populateAttendanceSlots(); 
-      populateExportAttendanceSlots(); 
+      populateSlotGroupSelect();
+      populateAttendanceSlots();
+      populateExportAttendanceSlots();
     } catch (error) {
       console.error("Error saving group:", error);
       alert(`Failed to save group: ${error.message}`);
@@ -582,8 +634,8 @@ document.addEventListener("DOMContentLoaded", () => {
         renderGroups();
         clearGroupForm();
         populateSlotGroupSelect();
-        populateAttendanceSlots(); 
-        populateExportAttendanceSlots(); 
+        populateAttendanceSlots();
+        populateExportAttendanceSlots();
       } catch (error) {
         console.error("Error deleting group:", error);
         alert(`Failed to delete group: ${error.message}`);
@@ -664,7 +716,7 @@ document.addEventListener("DOMContentLoaded", () => {
       renderStudents();
       uploadStatus.textContent = data.message;
       uploadStatus.classList.remove("hidden");
-      studentCsvUpload.value = ""; 
+      studentCsvUpload.value = "";
     } catch (error) {
       uploadError.textContent = `Error uploading CSV: ${error.message}`;
       uploadError.classList.remove("hidden");
@@ -710,7 +762,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const markAllPresentBtn = document.getElementById("markAllPresentBtn");
   const markAllAbsentBtn = document.getElementById("markAllAbsentBtn");
 
-  let currentStudentsForAttendance = []; 
+  let currentStudentsForAttendance = [];
 
   async function populateAttendanceSlots() {
     try {
@@ -725,7 +777,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const option = document.createElement("option");
         option.value = slot.id;
         option.textContent = `${slot.course} - ${slot.lab} (${slot.day}, ${slot.time})`;
-        option.dataset.subSubgroups = JSON.stringify(slot.subSubgroups); 
+        option.dataset.subSubgroups = JSON.stringify(slot.subSubgroups);
         attendanceSlotSelect.appendChild(option);
       });
     } catch (error) {
@@ -733,6 +785,19 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Failed to load lab slots for attendance.");
     }
   }
+
+  slotGroupDropdownBtn.addEventListener("click", () => {
+    slotGroupDropdown.classList.toggle("hidden");
+  });
+
+  window.addEventListener("click", (e) => {
+    if (
+      !slotGroupDropdown.contains(e.target) &&
+      !slotGroupDropdownBtn.contains(e.target)
+    ) {
+      slotGroupDropdown.classList.add("hidden");
+    }
+  });
 
   attendanceSlotSelect.addEventListener("change", () => {
     const selectedOption =
@@ -752,7 +817,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ) {
       const subSubgroups = JSON.parse(selectedOption.dataset.subSubgroups);
       if (subSubgroups.length > 0) {
-        const sorted = [...subSubgroups].sort(); 
+        const sorted = [...subSubgroups].sort();
         sorted.forEach((subSubgroup) => {
           const option = document.createElement("option");
           option.value = subSubgroup;
@@ -763,7 +828,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   });
-
 
   attendanceSubSubgroupSelect.addEventListener("change", async () => {
     const selectedSlotId = attendanceSlotSelect.value;
@@ -782,7 +846,7 @@ document.addEventListener("DOMContentLoaded", () => {
       );
       if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
-      const studentsWithAttendance = await response.json(); 
+      const studentsWithAttendance = await response.json();
 
       if (studentsWithAttendance.length === 0) {
         attendanceTableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-gray-500">No students found for sub-subgroup: ${selectedSubSubgroup}.</td></tr>`;
@@ -794,7 +858,7 @@ document.addEventListener("DOMContentLoaded", () => {
         row.classList.add("hover:bg-light-blue-100");
         row.dataset.rollNo = student.rollNo;
 
-        const initialStatus = student.initialStatus || "Absent"; 
+        const initialStatus = student.initialStatus || "Absent";
 
         row.innerHTML = `
                     <td class="py-2 px-4 border-b border-gray-200">${
@@ -883,7 +947,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const payload = {
       slotId: selectedSlotId,
       subSubgroupName: selectedSubSubgroup,
-      attendanceRecords: attendanceRecords, 
+      attendanceRecords: attendanceRecords,
     };
 
     try {
@@ -924,7 +988,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "exportAttendanceError"
   );
 
-  let allSubSubgroups = []; 
+  let allSubSubgroups = [];
 
   async function populateExportAttendanceSlots() {
     try {
@@ -935,7 +999,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       exportAttendanceSlotSelect.innerHTML =
         '<option value="">All Slots</option>';
-      allSubSubgroups = []; 
+      allSubSubgroups = [];
 
       slots.forEach((slot) => {
         const option = document.createElement("option");
@@ -945,12 +1009,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         slot.subSubgroups.forEach((ssgName) => {
           if (!allSubSubgroups.some((item) => item.name === ssgName)) {
-            allSubSubgroups.push({ name: ssgName, id: `dummy-id-${ssgName}` }); 
+            allSubSubgroups.push({ name: ssgName, id: `dummy-id-${ssgName}` });
           }
         });
       });
 
-      populateExportSubSubgroupSelect(slots); 
+      populateExportSubSubgroupSelect(slots);
     } catch (error) {
       console.error("Error fetching export attendance slots:", error);
       alert("Failed to load lab slots for attendance export.");
@@ -968,45 +1032,32 @@ document.addEventListener("DOMContentLoaded", () => {
       const selectedSlot = allSlots.find((slot) => slot.id === selectedSlotId);
       if (selectedSlot && selectedSlot.subSubgroups) {
         try {
-          const response = await fetch(`${API_BASE_URL}/groups`); 
-          const groups = await response.json();
-          let ssgNameToIdMap = {};
-          groups.forEach((group) => {
-            group.subSubgroups.forEach((ssgName) => {
-              const ssgObj = group.sub_subgroups_full
-                ? group.sub_subgroups_full.find((s) => s.name === ssgName)
-                : null;
-              if (ssgObj) {
-                ssgNameToIdMap[ssgName] = ssgObj.id;
-              } else {
-              }
-            });
-          });
-
+          // Fetch all sub-subgroups to build name-to-ID map
           const allSsgResponse = await fetch(
             `${API_BASE_URL}/subsubgroups/all`
-          ); 
-          if (allSsgResponse.ok) {
-            const allSsgs = await allSsgResponse.json();
-            ssgNameToIdMap = allSsgs.reduce((acc, ssg) => {
-              acc[ssg.name] = ssg.id;
-              return acc;
-            }, {});
-          } else {
+          );
+          if (!allSsgResponse.ok) {
             console.warn(
               "Could not fetch all sub-subgroups to build name-to-ID map."
             );
+            return;
           }
+          
+          const allSsgs = await allSsgResponse.json();
+          const ssgNameToIdMap = allSsgs.reduce((acc, ssg) => {
+            acc[ssg.name] = ssg.id;
+            return acc;
+          }, {});
 
           const sorted = [...selectedSlot.subSubgroups].sort();
           sorted.forEach((ssgName) => {
             const ssgId = (SSG_NAME_TO_ID && SSG_NAME_TO_ID[ssgName]) || null;
             if (!ssgId) {
               console.warn("Missing ID for sub-subgroup (skipping):", ssgName);
-              return; 
+              return;
             }
             const option = document.createElement("option");
-            option.value = ssgId; 
+            option.value = ssgId;
             option.textContent = ssgName;
             exportAttendanceSubSubgroupSelect.appendChild(option);
           });
@@ -1018,7 +1069,7 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const response = await fetch(`${API_BASE_URL}/groups`);
         const groups = await response.json();
-        let uniqueSubSubgroups = new Set(); 
+        let uniqueSubSubgroups = new Set();
         let ssgNameToIdMap = {};
 
         groups.forEach((group) => {
@@ -1060,9 +1111,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   exportAttendanceSlotSelect.addEventListener("change", async () => {
-    const response = await fetch(`${API_BASE_URL}/attendance/slots`);
-    const slots = await response.json();
-    populateExportSubSubgroupSelect(slots);
+    try {
+      const response = await fetch(`${API_BASE_URL}/attendance/slots`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const slots = await response.json();
+      populateExportSubSubgroupSelect(slots);
+    } catch (error) {
+      console.error("Error fetching slots for export filter:", error);
+      alert("Failed to load slots for export filter.");
+    }
   });
 
   exportAttendanceBtn.addEventListener("click", async () => {
@@ -1070,7 +1127,7 @@ document.addEventListener("DOMContentLoaded", () => {
     exportAttendanceError.classList.add("hidden");
 
     const slotId = exportAttendanceSlotSelect.value;
-    const subSubgroupId = exportAttendanceSubSubgroupSelect.value; 
+    const subSubgroupId = exportAttendanceSubSubgroupSelect.value;
     const startDate = exportStartDateInput.value;
     const endDate = exportEndDateInput.value;
 

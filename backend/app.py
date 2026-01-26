@@ -10,6 +10,7 @@ import uuid
 import os
 import openpyxl  
 import jwt
+import json
 
 
 from dotenv import load_dotenv 
@@ -113,19 +114,29 @@ class LabSlot(db.Model):
     lab = db.Column(db.String(20), nullable=False)
     day = db.Column(db.String(10), nullable=False) 
     time = db.Column(db.String(20), nullable=False) 
-    group_name = db.Column(db.String(50), nullable=False) 
+    group_name = db.Column(db.Text, nullable=False)  # Store as JSON string to support multiple groups
     
     assigned_sub_subgroups = db.relationship('SlotSubSubgroup', backref='lab_slot', lazy=True, cascade="all, delete-orphan")
     
 
     def to_dict(self):
+        # Parse group_name from JSON string to array
+        try:
+            group_names = json.loads(self.group_name) if self.group_name else []
+            # Ensure it's always a list
+            if not isinstance(group_names, list):
+                group_names = [group_names]
+        except (json.JSONDecodeError, TypeError):
+            # Fallback for old data that might be plain strings
+            group_names = [self.group_name] if self.group_name else []
+        
         return {
             'id': self.id,
             'course': self.course,
             'lab': self.lab,
             'day': self.day,
             'time': self.time,
-            'groupName': self.group_name,
+            'groupName': group_names,
             'subSubgroups': [
                 SubSubgroup.query.get(ssg_link.sub_subgroup_id).name
                 for ssg_link in self.assigned_sub_subgroups
@@ -302,16 +313,21 @@ def create_slot():
     lab = data.get('lab')
     day = data.get('day')
     time = data.get('time')
-    group_name = data.get('groupName')
+    group_names = data.get('groupName')  # Now expects an array
     sub_subgroup_names = data.get('subSubgroups', []) 
 
-    if not all([course, lab, day, time, group_name, sub_subgroup_names]):
+    if not all([course, lab, day, time, group_names, sub_subgroup_names]):
         return jsonify({"message": "Missing required fields"}), 400
+    
+    # Ensure group_names is a list
+    if not isinstance(group_names, list):
+        group_names = [group_names]
     
     if LabSlot.query.filter_by(day=day, time=time, lab=lab).first():
         return jsonify({"message": "A slot for this lab, day, and time already exists."}), 409
 
-    new_slot = LabSlot(course=course, lab=lab, day=day, time=time, group_name=group_name)
+    # Store group names as JSON string
+    new_slot = LabSlot(course=course, lab=lab, day=day, time=time, group_name=json.dumps(group_names))
     db.session.add(new_slot)
     db.session.flush()
 
@@ -335,8 +351,16 @@ def update_slot(slot_id):
     lab = data.get('lab', slot.lab)
     day = data.get('day', slot.day)
     time = data.get('time', slot.time)
-    group_name = data.get('groupName', slot.group_name)
+    group_names = data.get('groupName')
     sub_subgroup_names = data.get('subSubgroups', [])
+
+    # Handle group_names - ensure it's a list and convert to JSON
+    if group_names is not None:
+        if not isinstance(group_names, list):
+            group_names = [group_names]
+        group_name_json = json.dumps(group_names)
+    else:
+        group_name_json = slot.group_name
 
     if (day != slot.day or time != slot.time or lab != slot.lab) and \
        LabSlot.query.filter_by(day=day, time=time, lab=lab).filter(LabSlot.id != slot_id).first():
@@ -346,7 +370,7 @@ def update_slot(slot_id):
     slot.lab = lab
     slot.day = day
     slot.time = time
-    slot.group_name = group_name
+    slot.group_name = group_name_json
 
     SlotSubSubgroup.query.filter_by(lab_slot_id=slot.id).delete()
     db.session.flush() 
