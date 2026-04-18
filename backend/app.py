@@ -3,18 +3,19 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from werkzeug.utils import safe_join
 from werkzeug.security import generate_password_hash, check_password_hash
-import pandas as pd
+import csv
 import io
 import datetime
 import uuid
 import os
-import openpyxl  
+from openpyxl import Workbook
 import jwt
 import json
 
 
 from dotenv import load_dotenv 
-load_dotenv()  
+env_path = os.path.join(os.path.dirname(__file__), '.env')
+load_dotenv(env_path)
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
@@ -436,9 +437,10 @@ def upload_students_csv():
     
     if file and file.filename.endswith('.csv'):
         try:
-            csv_data = pd.read_csv(io.StringIO(file.stream.read().decode('utf-8')))
-            expected_headers = ['Roll No', 'Name', 'Sub-subgroup']
-            if not all(header in csv_data.columns for header in expected_headers):
+            file_content = file.stream.read().decode('utf-8')
+            csv_reader = csv.DictReader(io.StringIO(file_content))
+            
+            if not csv_reader.fieldnames or not all(header in csv_reader.fieldnames for header in ['Roll No', 'Name', 'Sub-subgroup']):
                 return jsonify({"message": "CSV headers must be 'Roll No, Name, Sub-subgroup'. Please check your file."}), 400
 
             new_students_count = 0
@@ -446,7 +448,7 @@ def upload_students_csv():
             
             all_sub_subgroups = {ssg.name.upper(): ssg.id for ssg in SubSubgroup.query.all()}
             
-            for index, row in csv_data.iterrows():
+            for index, row in enumerate(csv_reader):
                 roll_no = str(row['Roll No']).strip().upper()
                 name = str(row['Name']).strip()
                 sub_subgroup_name = str(row['Sub-subgroup']).strip().upper()
@@ -645,11 +647,16 @@ def export_attendance():
     if not export_data:
         return jsonify({"message": "No attendance data found for the selected filters."}), 404
 
-    df = pd.DataFrame(export_data)
-
     output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Attendance')
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Attendance'
+    if export_data:
+        headers = list(export_data[0].keys())
+        ws.append(headers)
+        for record in export_data:
+            ws.append([record[col] for col in headers])
+    wb.save(output)
     output.seek(0)
 
     filename = f"attendance_export_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
